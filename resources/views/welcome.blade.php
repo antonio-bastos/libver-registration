@@ -147,19 +147,19 @@
 
         .layout {
             max-width: 1200px;
-            margin: 16px auto 60px;
-            padding: 0 24px 40px;
+            margin: 8px auto 24px;
+            padding: 0 12px 16px;
             display: grid;
             grid-template-columns: 1fr 1.2fr;
-            gap: 24px;
+            gap: 12px;
         }
 
         .panel {
             background: var(--card);
             border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 20px 24px;
-            box-shadow: 0 20px 35px rgba(17, 24, 39, 0.06);
+            border-radius: 14px;
+            padding: 10px 12px;
+            box-shadow: 0 8px 18px rgba(17, 24, 39, 0.04);
         }
 
         .panel h2 {
@@ -381,33 +381,7 @@
         </div>
     </header>
 
-    <section class="hero">
-        <div class="hero-card">
-            <h1>Workshops, events, and learning adventures.</h1>
-            <p>Discover hands-on workshops, storytelling sessions, and space bookings. Registration is open to families without requiring a login.</p>
-            <div class="hero-actions">
-                <a class="btn" href="#actions">Browse Activities</a>
-                <a class="btn btn-outline" href="#calendar">View Calendar</a>
-            </div>
-        </div>
-        <div class="hero-card">
-            <div class="stats">
-                <div class="stat">
-                    <strong>{{ $stats['events'] }}</strong>
-                    {{ $monthLabel }} Events
-                </div>
-                <div class="stat">
-                    <strong>{{ $stats['age_groups'] }}</strong>
-                    Age Groups
-                </div>
-                <div class="stat">
-                    <strong>{{ $stats['venues'] }}</strong>
-                    Venues
-                </div>
-            </div>
-            <p style="margin-top:16px;">Latest updates, cancellations, and waitlist openings appear here in real time.</p>
-        </div>
-    </section>
+
 
     <section class="layout">
         <div class="panel" id="actions">
