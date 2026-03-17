@@ -55,8 +55,8 @@
             <label for="email">E-mail address</label>
             <input id="email" name="email" type="email" required value="{{ old('email') }}">
 
-            <label for="code">Code</label>
-            <input id="code" name="code" type="password" required>
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" required>
 
             <div class="row">
                 <label for="remember">

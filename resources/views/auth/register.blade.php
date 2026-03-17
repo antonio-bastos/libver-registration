@@ -63,12 +63,12 @@
                     <input id="email" name="email" type="email" required value="{{ old('email') }}">
                 </div>
                 <div>
-                    <label for="code">Code <span>*</span></label>
-                    <input id="code" name="code" type="password" required>
+                    <label for="password">Password<span>*</span></label>
+                    <input id="password" name="password" type="password" required>
                 </div>
                 <div>
-                    <label for="code_confirmation">Password Confirmation <span>*</span></label>
-                    <input id="code_confirmation" name="code_confirmation" type="password" required>
+                    <label for="password_confirmation">Password Confirmation <span>*</span></label>
+                    <input id="password_confirmation" name="password_confirmation" type="password" required>
                 </div>
             </div>
 

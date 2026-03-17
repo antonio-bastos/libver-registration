@@ -13,6 +13,7 @@ return new class extends Migration
             $table->string('title');
             $table->text('description_html')->nullable();
             $table->string('type')->default('workshop');
+            $table->string('age_group')->nullable();
             $table->string('status')->default('active');
             $table->unsignedInteger('capacity')->nullable();
             $table->boolean('waitlist_enabled')->default(true);

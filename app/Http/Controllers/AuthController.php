@@ -20,15 +20,12 @@ class AuthController extends Controller
     {
         $credentials = $request->validate([
             'email' => ['required', 'email'],
-            'code' => ['required', 'string'],
+            'password' => ['required', 'string'],
         ]);
 
         $remember = (bool) $request->input('remember');
 
-        if (Auth::attempt([
-            'email' => $credentials['email'],
-            'password' => $credentials['code'],
-        ], $remember)) {
+        if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
 
             return redirect()->intended(route('dashboard'));
@@ -57,7 +54,7 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'email' => ['required', 'email', 'unique:users,email'],
-            'code' => ['required', 'string', 'min:6', 'confirmed'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
             'name' => ['required', 'string', 'max:255'],
             'surname' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:40'],
@@ -69,7 +66,7 @@ class AuthController extends Controller
             'name' => $data['name'],
             'surname' => $data['surname'],
             'email' => $data['email'],
-            'password' => Hash::make($data['code']),
+            'password' => Hash::make($data['password']),
             'role' => User::ROLE_PARENT,
             'phone' => $data['phone'],
             'card_number' => $data['card_number'],

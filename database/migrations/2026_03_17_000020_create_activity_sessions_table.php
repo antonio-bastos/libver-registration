@@ -12,8 +12,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('activity_id')->constrained('activities')->cascadeOnDelete();
             $table->string('mode')->default('in_person');
-            $table->timestamp('start_at');
-            $table->timestamp('end_at');
+            $table->dateTime('start_at');
+            $table->dateTime('end_at');
             $table->string('location')->nullable();
             $table->string('online_url')->nullable();
             $table->timestamps();

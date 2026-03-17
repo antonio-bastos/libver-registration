@@ -11,20 +11,36 @@ class Activity extends Model
         'title',
         'description_html',
         'type',
+        'activity_subtype',
+        'age_group',
         'status',
+        'is_active',
+        'is_archived',
         'capacity',
+        'seating_capacity',
+        'numbered_seating',
+        'fee',
+        'is_paid',
         'waitlist_enabled',
         'reg_start_at',
         'start_at',
         'end_at',
         'location',
+        'online_url',
+        'live_stream_url',
+        'connection_details',
     ];
 
     protected $casts = [
         'waitlist_enabled' => 'bool',
+        'is_active' => 'bool',
+        'is_archived' => 'bool',
+        'is_paid' => 'bool',
+        'numbered_seating' => 'bool',
         'reg_start_at' => 'datetime',
         'start_at' => 'datetime',
         'end_at' => 'datetime',
+        'fee' => 'decimal:2',
     ];
 
     public function sessions(): HasMany
