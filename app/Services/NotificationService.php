@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Notification;
 use App\Models\Registration;
 use App\Models\WaitlistOffer;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class NotificationService
@@ -70,16 +71,37 @@ class NotificationService
     {
         $hash = hash('sha256', $dedupeKey);
 
-        Notification::query()->insertOrIgnore([
-            'channel' => $channel,
-            'recipient' => $recipient,
-            'template' => $template,
-            'payload_json' => json_encode($payload),
-            'dedupe_hash' => $hash,
-            'status' => Notification::STATUS_QUEUED,
-            'created_at' => now(),
-            'updated_at' => now(),
+        $notification = Notification::query()->firstOrCreate(
+            ['dedupe_hash' => $hash],
+            [
+                'channel' => $channel,
+                'recipient' => $recipient,
+                'template' => $template,
+                'payload_json' => json_encode($payload),
+                'status' => Notification::STATUS_QUEUED,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+
+        if ($notification->wasRecentlyCreated) {
+            $this->sendImmediately($notification);
+        }
+    }
+
+    private function sendImmediately(Notification $notification): void
+    {
+        Log::info('Notification dispatch', [
+            'id' => $notification->id,
+            'channel' => $notification->channel,
+            'recipient' => $notification->recipient,
+            'template' => $notification->template,
+            'payload' => $notification->payload_json,
         ]);
+
+        $notification->status = Notification::STATUS_SENT;
+        $notification->sent_at = now();
+        $notification->save();
     }
 
     private function dedupeKey(string $event, int $registrationId, int $contextId): string

@@ -1,12 +1,33 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminUsersController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\WaitlistController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/', function () {
+    return view('welcome');
+})->name('home');
+
+Route::get('/login', [AuthController::class, 'showLoginForm'])
+    ->name('login');
+Route::post('/login', [AuthController::class, 'login'])
+    ->name('login.submit');
+Route::get('/registration', [AuthController::class, 'showRegistrationForm'])
+    ->name('register');
+Route::post('/registration', [AuthController::class, 'register'])
+    ->name('register.submit');
+Route::post('/logout', [AuthController::class, 'logout'])
+    ->middleware('auth')
+    ->name('logout');
+
 Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
+
     Route::post('/registrations', [RegistrationController::class, 'store'])
         ->name('registrations.store');
     Route::post('/registrations/{registration}/cancel', [RegistrationController::class, 'cancel'])

@@ -45,6 +45,17 @@ class RegistrationService
                 ->where('user_id', $parentId)
                 ->firstOrFail();
 
+            $existingRegistration = Registration::query()
+                ->where('activity_id', $activity->id)
+                ->where('child_id', $child->id)
+                ->where('status', '!=', Registration::STATUS_CANCELED)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existingRegistration) {
+                throw new RuntimeException('Child already registered.');
+            }
+
             $this->conflictService->assertNoConflict($child->id, $activity->id);
 
             $confirmedCount = Registration::query()
