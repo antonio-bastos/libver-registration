@@ -1,73 +1,101 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300;400;600&family=Fraunces:wght@600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #f4f6f8;
-            --border: #e3e7ee;
-            --ink: #1b2333;
-            --muted: #6b7280;
-            --brand: #2563eb;
-        }
+@extends('layouts.auth')
 
-        body { font-family: "Chivo", "Trebuchet MS", sans-serif; background: var(--bg); margin: 0; color: var(--ink); }
-        header { background: #ffffff; border-bottom: 1px solid var(--border); }
-        .nav { max-width: 1100px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
-        .brand { font-family: "Fraunces", serif; font-size: 20px; }
-        .nav a { text-decoration: none; color: var(--ink); margin-left: 16px; font-size: 14px; }
-        .container { max-width: 520px; margin: 60px auto; background: #ffffff; padding: 32px 40px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
-        h1 { margin: 0 0 18px; font-family: "Fraunces", serif; }
-        label { display: block; font-weight: 600; margin: 16px 0 6px; }
-        input { width: 100%; padding: 10px 12px; border: 1px solid #d6d6d6; border-radius: 8px; }
-        .row { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; font-size: 13px; color: var(--muted); }
-        .row label { margin: 0; font-weight: 400; display: flex; align-items: center; gap: 6px; }
-        button { margin-top: 18px; padding: 10px 18px; border: none; border-radius: 6px; background: var(--brand); color: #ffffff; font-weight: 600; cursor: pointer; }
-        .error { color: #b91c1c; font-size: 14px; margin-top: 8px; }
-        .forgot { color: var(--brand); text-decoration: none; }
-    </style>
-</head>
-<body>
-    <header>
-        <div class="nav">
-            <div class="brand">Public Library of Veria</div>
-            <div>
-                <a href="{{ route('login') }}">Login</a>
-                <a href="{{ route('register') }}">Registration</a>
-            </div>
+@section('title', 'Login - Public Library of Veria')
+@section('header', 'Welcome Back')
+@section('sub-header', 'Sign in to your library account')
+@section('width', '420px')
+
+@section('content')
+    <form method="POST" action="{{ route('login.submit') }}" id="loginForm" novalidate>
+        @csrf
+
+        <div class="form-group">
+            <label for="email">
+                <i class="fas fa-envelope"></i> Email Address
+            </label>
+            <input 
+                id="email" 
+                name="email" 
+                type="email" 
+                required 
+                placeholder="you@example.com"
+                class="@error('email') error @enderror"
+                value="{{ old('email') }}"
+            >
+             @error('email')
+                <div class="field-error"><i class="fas fa-times-circle"></i> {{ $message }}</div>
+            @enderror
         </div>
-    </header>
 
-    <div class="container">
-        <h1>Login</h1>
-
-        @if ($errors->any())
-            <div class="error">{{ $errors->first() }}</div>
-        @endif
-
-        <form method="post" action="{{ route('login.submit') }}">
-            @csrf
-            <label for="email">E-mail address</label>
-            <input id="email" name="email" type="email" required value="{{ old('email') }}">
-
-            <label for="password">Password</label>
-            <input id="password" name="password" type="password" required>
-
-            <div class="row">
-                <label for="remember">
-                    <input id="remember" type="checkbox" name="remember">
-                    Stay Connected
-                </label>
-                <a class="forgot" href="#">I forgot my password</a>
+        <div class="form-group">
+            <label for="password">
+                <i class="fas fa-lock"></i> Password
+            </label>
+            <div class="password-container">
+                <input 
+                    id="password" 
+                    name="password" 
+                    type="password" 
+                    required 
+                    placeholder="Enter your password"
+                    class="@error('password') error @enderror"
+                >
+                <i class="fas fa-eye password-toggle" id="togglePasswordBtn" onclick="togglePassword('password', 'togglePasswordBtn')"></i>
             </div>
+             @error('password')
+                <div class="field-error"><i class="fas fa-times-circle"></i> {{ $message }}</div>
+            @enderror
+        </div>
 
-            <button type="submit">Login</button>
-        </form>
-    </div>
-</body>
-</html>
+        <div class="form-options">
+            <div class="checkbox-wrapper">
+                <input id="remember" type="checkbox" name="remember" value="1">
+                <label for="remember">Stay Connected</label>
+            </div>
+            <!-- Disabled for now as backend logic isn't implemented -->
+            <!-- <a class="forgot-link" href="#">
+                <i class="fas fa-question-circle"></i> Forgot Password?
+            </a> -->
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" id="submitBtn">
+                <i class="fas fa-sign-in-alt"></i> Sign In
+            </button>
+        </div>
+
+        <div class="form-footer">
+            Don't have an account? 
+            <a href="{{ route('register') }}">Create one here</a>
+        </div>
+    </form>
+@endsection
+
+@push('scripts')
+<script>
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        const btn = document.getElementById('submitBtn');
+        // Simple client-side check if form is valid (email and password exist)
+        if(document.getElementById('email').value && document.getElementById('password').value) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Signing In...';
+        }
+    });
+
+    const emailInput = document.getElementById('email');
+    emailInput.addEventListener('blur', function() {
+        if (this.value && !this.value.includes('@')) {
+            this.classList.add('error');
+        } else {
+            this.classList.remove('error');
+        }
+    });
+
+    const passwordInput = document.getElementById('password');
+    passwordInput.addEventListener('input', function() {
+        if (this.value) {
+            this.classList.remove('error');
+        }
+    });
+</script>
+@endpush

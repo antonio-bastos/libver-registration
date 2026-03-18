@@ -1,105 +1,319 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Registration</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300;400;600&family=Fraunces:wght@600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #f4f6f8;
-            --border: #e3e7ee;
-            --ink: #1b2333;
-            --muted: #6b7280;
-            --brand: #2563eb;
-        }
+@extends('layouts.auth')
 
-        body { font-family: "Chivo", "Trebuchet MS", sans-serif; background: var(--bg); margin: 0; color: var(--ink); }
-        header { background: #ffffff; border-bottom: 1px solid var(--border); }
-        .nav { max-width: 1100px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
-        .brand { font-family: "Fraunces", serif; font-size: 20px; }
-        .nav a { text-decoration: none; color: var(--ink); margin-left: 16px; font-size: 14px; }
-        .container { max-width: 760px; margin: 50px auto; background: #ffffff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
-        .header { padding: 18px 28px; border-bottom: 1px solid var(--border); font-family: "Fraunces", serif; }
-        form { padding: 24px 28px 32px; }
-        h2 { font-size: 16px; margin: 0 0 16px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; }
-        label { font-weight: 600; font-size: 14px; }
-        label span { color: #dc2626; }
-        input { width: 100%; padding: 10px 12px; border: 1px solid #d6d6d6; border-radius: 8px; }
-        .full { grid-column: 1 / -1; }
-        .actions { margin-top: 22px; display: flex; justify-content: center; }
-        button { padding: 10px 22px; border: none; border-radius: 6px; background: var(--brand); color: #ffffff; font-weight: 600; cursor: pointer; }
-        .error { color: #b91c1c; font-size: 14px; margin-bottom: 14px; }
-        @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
-    </style>
-</head>
-<body>
-    <header>
-        <div class="nav">
-            <div class="brand">Public Library of Veria</div>
-            <div>
-                <a href="{{ route('login') }}">Login</a>
-                <a href="{{ route('register') }}">Registration</a>
+@section('title', 'Register - Public Library of Veria')
+@section('header', 'Create Your Account')
+@section('sub-header', 'Join our library community today')
+@section('width', '600px')
+
+@push('styles')
+<style>
+    .password-strength-meter {
+        height: 5px;
+        background-color: #e2e8f0;
+        border-radius: 3px;
+        margin-top: 10px;
+        overflow: hidden;
+        display: none; /* Hidden by default until typing starts */
+    }
+    
+    .meter-bar {
+        height: 100%;
+        width: 0;
+        transition: width 0.3s ease, background-color 0.3s ease;
+    }
+    
+    .password-strength-text {
+        font-size: 11px;
+        margin-top: 5px;
+        color: #64748b;
+        font-weight: 500;
+        text-align: right;
+        min-height: 17px;
+    }
+
+    .strength-weak { background-color: #ef4444; }   /* Red */
+    .strength-fair { background-color: #f59e0b; }   /* Orange */
+    .strength-good { background-color: #3b82f6; }   /* Blue */
+    .strength-strong { background-color: #22c55e; } /* Green */
+</style>
+@endpush
+
+@section('content')
+    <form method="POST" action="{{ route('register.submit') }}" id="registerForm" novalidate>
+        @csrf
+
+        <!-- Account Details Section -->
+        <div class="section-title">Account Details</div>
+        
+        <div class="form-row full">
+            <div class="form-field">
+                <label for="email">
+                    <i class="fas fa-envelope"></i> Email Address <span class="required">*</span>
+                </label>
+                <input 
+                    id="email" 
+                    name="email" 
+                    type="email" 
+                    required 
+                    placeholder="you@example.com"
+                    class="@error('email') error @enderror"
+                    value="{{ old('email') }}"
+                >
+                @error('email')
+                    <div class="field-error"><i class="fas fa-times-circle"></i> {{ $message }}</div>
+                @enderror
             </div>
         </div>
-    </header>
 
-    <div class="container">
-        <div class="header">Registration</div>
-        <form method="post" action="{{ route('register.submit') }}">
-            @csrf
+        <div class="form-row">
+            <div class="form-field">
+                <label for="password">
+                    <i class="fas fa-lock"></i> Password <span class="required">*</span>
+                </label>
+                <div class="password-container">
+                    <input 
+                        id="password" 
+                        name="password" 
+                        type="password" 
+                        required 
+                        placeholder="8+ chars, mixed case, num & symbol"
+                        class="@error('password') error @enderror"
+                    >
+                    <i class="fas fa-eye password-toggle" id="toggleRegPassword" onclick="togglePassword('password', 'toggleRegPassword')"></i>
+                </div>
+                
+                <!-- Password Strength Meter -->
+                <div class="password-strength-meter" id="strengthMeter">
+                    <div class="meter-bar" id="strengthBar"></div>
+                </div>
+                <div class="password-strength-text" id="strengthText"></div>
 
-            @if ($errors->any())
-                <div class="error">{{ $errors->first() }}</div>
-            @endif
-
-            <h2>Input details</h2>
-            <div class="grid">
-                <div class="full">
-                    <label for="email">E-mail address <span>*</span></label>
-                    <input id="email" name="email" type="email" required value="{{ old('email') }}">
-                </div>
-                <div>
-                    <label for="password">Password<span>*</span></label>
-                    <input id="password" name="password" type="password" required>
-                </div>
-                <div>
-                    <label for="password_confirmation">Password Confirmation <span>*</span></label>
-                    <input id="password_confirmation" name="password_confirmation" type="password" required>
-                </div>
+                @error('password')
+                    <div class="field-error"><i class="fas fa-times-circle"></i> {{ $message }}</div>
+                @enderror
             </div>
 
-            <h2 style="margin-top:22px;">Personal information</h2>
-            <div class="grid">
-                <div>
-                    <label for="name">Name <span>*</span></label>
-                    <input id="name" name="name" type="text" required value="{{ old('name') }}">
+            <div class="form-field">
+                <label for="password_confirmation">
+                    <i class="fas fa-lock"></i> Confirm Password <span class="required">*</span>
+                </label>
+                 <div class="password-container">
+                    <input 
+                        id="password_confirmation" 
+                        name="password_confirmation" 
+                        type="password" 
+                        required 
+                        placeholder="Re-enter your password"
+                        class="@error('password_confirmation') error @enderror"
+                    >
+                     <i class="fas fa-eye password-toggle" id="toggleRegConfirm" onclick="togglePassword('password_confirmation', 'toggleRegConfirm')"></i>
                 </div>
-                <div>
-                    <label for="surname">Surname <span>*</span></label>
-                    <input id="surname" name="surname" type="text" required value="{{ old('surname') }}">
-                </div>
-                <div>
-                    <label for="phone">Mobile phone <span>*</span></label>
-                    <input id="phone" name="phone" type="text" required value="{{ old('phone') }}">
-                </div>
-                <div>
-                    <label for="card_number">No. card <span>*</span></label>
-                    <input id="card_number" name="card_number" type="text" required value="{{ old('card_number') }}">
-                </div>
-                <div class="full">
-                    <label for="dob">Date of birth <span>*</span></label>
-                    <input id="dob" name="dob" type="date" required value="{{ old('dob') }}">
-                </div>
+            </div>
+        </div>
+
+        <!-- Personal Information Section -->
+        <div class="section-title">Personal Information</div>
+
+        <div class="form-row">
+            <div class="form-field">
+                <label for="name">
+                    <i class="fas fa-user"></i> First Name <span class="required">*</span>
+                </label>
+                <input 
+                    id="name" 
+                    name="name" 
+                    type="text" 
+                    required 
+                    placeholder="John"
+                    class="@error('name') error @enderror"
+                    value="{{ old('name') }}"
+                >
+                @error('name')
+                    <div class="field-error"><i class="fas fa-times-circle"></i> {{ $message }}</div>
+                @enderror
             </div>
 
-            <div class="actions">
-                <button type="submit">Registration</button>
+            <div class="form-field">
+                <label for="surname">
+                    <i class="fas fa-user"></i> Last Name <span class="required">*</span>
+                </label>
+                <input 
+                    id="surname" 
+                    name="surname" 
+                    type="text" 
+                    required 
+                    placeholder="Doe"
+                    class="@error('surname') error @enderror"
+                    value="{{ old('surname') }}"
+                >
+                @error('surname')
+                    <div class="field-error"><i class="fas fa-times-circle"></i> {{ $message }}</div>
+                @enderror
             </div>
-        </form>
-    </div>
-</body>
-</html>
+        </div>
+
+        <div class="form-row">
+            <div class="form-field">
+                <label for="phone">
+                    <i class="fas fa-phone"></i> Mobile Phone <span class="required">*</span>
+                </label>
+                <input 
+                    id="phone" 
+                    name="phone" 
+                    type="tel" 
+                    required 
+                    placeholder="6912345678"
+                    class="@error('phone') error @enderror"
+                    value="{{ old('phone') }}"
+                >
+                @error('phone')
+                    <div class="field-error"><i class="fas fa-times-circle"></i> {{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="form-field">
+                <label for="card_number">
+                    <i class="fas fa-id-card"></i> ID Card Number <span class="required">*</span>
+                </label>
+                <input 
+                    id="card_number" 
+                    name="card_number" 
+                    type="text" 
+                    required 
+                    placeholder="Π1234567"
+                    class="@error('card_number') error @enderror"
+                    value="{{ old('card_number') }}"
+                >
+                @error('card_number')
+                    <div class="field-error"><i class="fas fa-times-circle"></i> {{ $message }}</div>
+                @enderror
+            </div>
+        </div>
+
+        <div class="form-row full">
+            <div class="form-field">
+                <label for="dob">
+                    <i class="fas fa-calendar"></i> Date of Birth <span class="required">*</span>
+                </label>
+                <input 
+                    id="dob" 
+                    name="dob" 
+                    type="date" 
+                    required 
+                    class="@error('dob') error @enderror"
+                    value="{{ old('dob') }}"
+                >
+                @error('dob')
+                    <div class="field-error"><i class="fas fa-times-circle"></i> {{ $message }}</div>
+                @enderror
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="form-actions">
+            <button type="submit" id="submitBtn">
+                <i class="fas fa-user-check"></i> Create Account
+            </button>
+        </div>
+
+        <div class="form-footer">
+            Already have an account? 
+            <a href="{{ route('login') }}">Sign in here</a>
+        </div>
+    </form>
+@endsection
+
+@push('scripts')
+<script>
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+        const btn = document.getElementById('submitBtn');
+        // Let the browser validation fallback or backend validation handle empty fields if novalidate logic isn't fully client-side
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Creating Account...';
+    });
+
+    // Add real-time validation feedback
+    const emailInput = document.getElementById('email');
+    emailInput.addEventListener('blur', function() {
+        if (this.value && !this.value.includes('@')) {
+            this.classList.add('error');
+        } else {
+            this.classList.remove('error');
+        }
+    });
+
+    const passwordInputs = document.querySelectorAll('#password, #password_confirmation');
+    passwordInputs.forEach(input => {
+        input.addEventListener('input', function() {
+
+    // Password Strength Logic
+    const passwordField = document.getElementById('password');
+    const strengthMeter = document.getElementById('strengthMeter');
+    const strengthBar = document.getElementById('strengthBar');
+    const strengthText = document.getElementById('strengthText');
+
+    passwordField.addEventListener('input', function() {
+        const val = this.value;
+        
+        // Show meter if user has started typing
+        if (val.length > 0) {
+            strengthMeter.style.display = 'block';
+        } else {
+            strengthMeter.style.display = 'none';
+            strengthText.textContent = '';
+            return;
+        }
+
+        let score = 0;
+        
+        // Criteria
+        if (val.length >= 8) score++;
+        if (val.length >= 12) score++;
+        if (/[A-Z]/.test(val)) score++;
+        if (/[0-9]/.test(val)) score++;
+        if (/[^A-Za-z0-9]/.test(val)) score++;
+
+        // Identify strength levels (0-5 score)
+        // Adjust width and color
+        let width = 0;
+        let colorClass = '';
+        let label = '';
+
+        if (score < 2) {
+            width = 25;
+            colorClass = 'strength-weak';
+            label = 'Weak';
+        } else if (score < 4) {
+            width = 50;
+            colorClass = 'strength-fair';
+            label = 'Fair';
+        } else if (score < 5) {
+            width = 75;
+            colorClass = 'strength-good';
+            label = 'Good';
+        } else {
+            width = 100;
+            colorClass = 'strength-strong';
+            label = 'Strong';
+        }
+
+        // Apply styles
+        strengthBar.style.width = width + '%';
+        strengthBar.className = 'meter-bar ' + colorClass;
+        strengthText.textContent = label;
+        
+        // Color text to match bar
+        if (score < 2) strengthText.style.color = '#ef4444';
+        else if (score < 4) strengthText.style.color = '#f59e0b';
+        else if (score < 5) strengthText.style.color = '#3b82f6';
+        else strengthText.style.color = '#22c55e';
+    });
+            if (this.value && this.value.length < 8) {
+                this.classList.add('error');
+            } else {
+                this.classList.remove('error');
+            }
+        });
+    });
+</script>
+@endpush

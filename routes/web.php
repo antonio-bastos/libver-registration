@@ -14,6 +14,7 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/login', [AuthController::class, 'showLoginForm'])
     ->name('login');
 Route::post('/login', [AuthController::class, 'login'])
+    ->middleware('throttle:login')
     ->name('login.submit');
 Route::get('/registration', [AuthController::class, 'showRegistrationForm'])
     ->name('register');
