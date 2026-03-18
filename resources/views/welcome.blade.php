@@ -9,12 +9,28 @@
     <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300;400;600&family=Fraunces:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #3b82f6;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --success: #059669;
+            --bg-light: #f8fafc;
+            --bg-white: #ffffff;
+            --border: #e2e8f0;
+            --text-dark: #1e293b;
+            --text-muted: #475569;
+            --text-light: #94a3b8;
+            --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            
+            /* Legacy variables for the rest of the page */
             --bg: #f4f6f8;
             --bg-accent: #e9ecf1;
             --ink: #23272e;
             --muted: #6b7280;
             --card: #f9fafb;
-            --border: #d1d5db;
             --accent: #2563eb;
             --accent-deep: #22304a;
             --pill: #2563eb;
@@ -23,51 +39,63 @@
         * { box-sizing: border-box; }
         body {
             margin: 0;
-            font-family: "Chivo", "Trebuchet MS", sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             color: var(--ink);
             background: var(--bg);
         }
 
         header {
-            background: rgba(255, 255, 255, 0.9);
+            background: var(--bg-white);
             border-bottom: 1px solid var(--border);
+            box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
             position: sticky;
             top: 0;
-            z-index: 10;
-            backdrop-filter: blur(10px);
+            z-index: 100;
         }
 
         .nav {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 16px 24px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 16px 24px;
         }
 
         .brand {
-            font-family: "Fraunces", serif;
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 700;
-            letter-spacing: 0.4px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
 
         .nav-links {
             display: flex;
-            gap: 16px;
-            font-size: 14px;
+            gap: 24px;
         }
 
-        .nav-links a {
+        .nav a {
             text-decoration: none;
-            color: var(--ink);
-            border-bottom: 2px solid transparent;
-            padding-bottom: 2px;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .nav-links a:hover {
-            border-bottom-color: var(--accent);
+        .nav a:hover {
+            color: var(--primary);
+        }
+
+        .nav-link-active {
+            color: var(--primary) !important;
+            font-weight: 600 !important;
         }
 
         .hero {
@@ -88,8 +116,7 @@
         }
 
         .hero h1 {
-            font-family: "Fraunces", serif;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 32px;
             margin: 0 0 10px;
         }
@@ -172,9 +199,8 @@
 
         .panel-header {
             padding: 12px 16px 8px 16px;
-            font-family: "Fraunces", serif;
             font-size: 20px;
-            font-weight: 600;
+            font-weight: 700;
             color: #23272e;
         }
 
@@ -236,6 +262,19 @@
             min-width: 140px;
         }
 
+        .event-tooltip {
+            background: #fff;
+            color: #23272e;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(35,39,46,0.12);
+            padding: 10px 16px;
+            font-size: 15px;
+            min-width: 160px;
+            max-width: 260px;
+            word-break: break-word;
+        }
+
         .calendar-header {
             display: flex;
             justify-content: space-between;
@@ -245,7 +284,7 @@
 
         .calendar-title {
             font-size: 22px;
-            font-family: "Fraunces", serif;
+            font-weight: 700;
         }
 
         .calendar-nav {
@@ -398,7 +437,6 @@
         }
 
         .modal-title {
-            font-family: "Fraunces", serif;
             font-size: 28px;
             font-weight: 700;
             margin: 0 0 12px;
@@ -480,13 +518,7 @@
 </head>
 <body>
     <header>
-        <div class="nav">
-            <div class="brand">Public Library of Veria</div>
-            <div class="nav-links">
-                <a href="{{ route('login') }}">Login</a>
-                <a href="{{ route('register') }}">Registration</a>
-            </div>
-        </div>
+        @include('components.navbar')
     </header>
 
     <section class="layout">
@@ -751,6 +783,44 @@
 
         document.querySelectorAll('[data-modal-close]').forEach(btn => btn.addEventListener('click', closeModal));
         modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+        // Add dummy event for testing
+        sessionsByDate['2026-03-23'] = sessionsByDate['2026-03-23'] || [];
+        sessionsByDate['2026-03-23'].push({
+            title: 'Test Dummy Event',
+            meta: '23/03/2026 17:00',
+            description: 'This is a dummy event for tooltip testing.'
+        });
+
+        // Tooltip logic
+        function createTooltip(element, title, meta) {
+            let tooltip = document.createElement('div');
+            tooltip.className = 'event-tooltip';
+            tooltip.innerHTML = `<div style='font-weight:600;'>${title}</div><div style='color:#444;'>@ ${meta}</div>`;
+            document.body.appendChild(tooltip);
+            const rect = element.getBoundingClientRect();
+            tooltip.style.position = 'absolute';
+            tooltip.style.left = (rect.left + window.scrollX) + 'px';
+            tooltip.style.top = (rect.top + window.scrollY - tooltip.offsetHeight - 8) + 'px';
+            tooltip.style.zIndex = 1000;
+            return tooltip;
+        }
+
+        let currentTooltip = null;
+        document.addEventListener('mouseover', function(e) {
+            const bubble = e.target.closest('.event-indicator');
+            if (bubble) {
+                if (currentTooltip) currentTooltip.remove();
+                currentTooltip = createTooltip(bubble, bubble.getAttribute('data-title'), bubble.getAttribute('data-meta'));
+            }
+        });
+        document.addEventListener('mouseout', function(e) {
+            const bubble = e.target.closest('.event-indicator');
+            if (bubble && currentTooltip) {
+                currentTooltip.remove();
+                currentTooltip = null;
+            }
+        });
 
         updateCalendarMonth(displayedDate);
     </script>

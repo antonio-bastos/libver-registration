@@ -1,8 +1,6 @@
 @extends('layouts.auth')
 
 @section('title', 'Login - Public Library of Veria')
-@section('header', 'Welcome Back')
-@section('sub-header', 'Sign in to your library account')
 @section('width', '420px')
 
 @section('content')
@@ -65,7 +63,7 @@
         </div>
 
         <div class="form-footer">
-            Don't have an account? 
+            Don't have an account?
             <a href="{{ route('register') }}">Create one here</a>
         </div>
     </form>

@@ -1,8 +1,6 @@
 @extends('layouts.auth')
 
 @section('title', 'Register - Public Library of Veria')
-@section('header', 'Create Your Account')
-@section('sub-header', 'Join our library community today')
 @section('width', '600px')
 
 @push('styles')
