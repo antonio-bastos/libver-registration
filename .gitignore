@@ -1,5 +1,4 @@
 *.log
-.DS_Store
 .phpactor.json
 .phpunit.result.cache
 /.fleet
@@ -8,7 +7,14 @@
 /.phpunit.cache
 /.vscode
 /.zed
+/auth.json
 /node_modules
 /public/build
 /public/hot
 /public/storage
+/storage/*.key
+/storage/pail
+/vendor
+Homestead.json
+Homestead.yaml
+Thumbs.db
