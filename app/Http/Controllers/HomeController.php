@@ -13,19 +13,29 @@ class HomeController extends Controller
     {
         $today = Carbon::today();
         $monthStart = $today->copy()->startOfMonth();
-        $monthEnd = $today->copy()->endOfMonth();
-        $calendarStart = $monthStart->copy()->startOfWeek(Carbon::MONDAY);
-        $calendarEnd = $monthEnd->copy()->endOfWeek(Carbon::SUNDAY);
 
-        $sessions = ActivitySession::query()
-            ->whereBetween('start_at', [$calendarStart->copy()->startOfDay(), $calendarEnd->copy()->endOfDay()])
+        // Fetch sessions for a wider range to support client-side navigation (e.g., 6 months)
+        $rangeStart = $monthStart->copy()->subMonths(3)->startOfMonth();
+        $rangeEnd = $monthStart->copy()->addMonths(3)->endOfMonth();
+
+        $allSessions = ActivitySession::query()
+            ->whereBetween('start_at', [$rangeStart, $rangeEnd])
             ->with('activity')
             ->orderBy('start_at')
             ->get();
 
-        $sessionsByDate = $sessions->groupBy(function (ActivitySession $session) {
-            return $session->start_at->toDateString();
-        });
+        $sessionsByDate = $allSessions->map(function ($session) {
+            return [
+                'id' => $session->id,
+                'date' => $session->start_at->toDateString(),
+                'time' => $session->start_at->format('H:i'),
+                'title' => $session->activity?->title ?? 'Activity',
+                'description' => strip_tags($session->activity?->description_html ?? ''),
+                'meta' => $session->start_at->format('d/m/Y H:i') . ($session->activity?->age_group ? ' · Ages ' . $session->activity->age_group : '') . ($session->location ?: ($session->activity?->location ? ' · ' . $session->activity->location : '')),
+                'venue' => $session->location ?: $session->activity?->location,
+                'age_group' => $session->activity?->age_group,
+            ];
+        })->groupBy('date');
 
         $actions = ActivitySession::query()
             ->where('start_at', '>=', now())
@@ -36,7 +46,7 @@ class HomeController extends Controller
 
         $stats = [
             'events' => ActivitySession::query()
-                ->whereBetween('start_at', [$monthStart->copy()->startOfDay(), $monthEnd->copy()->endOfDay()])
+                ->whereBetween('start_at', [$monthStart->copy()->startOfDay(), $monthStart->copy()->endOfMonth()->endOfDay()])  
                 ->count(),
             'age_groups' => Activity::query()
                 ->whereNotNull('age_group')
@@ -48,25 +58,11 @@ class HomeController extends Controller
                 ->count('location'),
         ];
 
-        $calendarDays = [];
-        $cursor = $calendarStart->copy();
-
-        while ($cursor->lte($calendarEnd)) {
-            $dateKey = $cursor->toDateString();
-            $calendarDays[] = [
-                'date' => $cursor->copy(),
-                'in_month' => $cursor->month === $monthStart->month,
-                'is_today' => $cursor->isSameDay($today),
-                'sessions' => $sessionsByDate->get($dateKey, collect()),
-            ];
-            $cursor->addDay();
-        }
-
         return view('welcome', [
             'actions' => $actions,
             'stats' => $stats,
-            'calendarDays' => $calendarDays,
+            'sessionsJson' => $sessionsByDate->toJson(),
             'monthLabel' => $monthStart->format('F Y'),
         ]);
-    }
-}
+    }}
+
