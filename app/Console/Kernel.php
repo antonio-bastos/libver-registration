@@ -9,7 +9,8 @@ class Kernel extends ConsoleKernel
 {
     protected function schedule(Schedule $schedule): void
     {
-        $schedule->command('activities:deactivate-past')->hourly();
+        $schedule->command('activities:archive')->daily();
+        $schedule->command('libver:expire-waitlist-offers')->everyFiveMinutes();
     }
 
     protected function commands(): void

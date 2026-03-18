@@ -29,6 +29,13 @@ class Activity extends Model
         'online_url',
         'live_stream_url',
         'connection_details',
+        'requires_selection',
+        'first_timers_only',
+        'materials_list',
+        'custom_message_postpone',
+        'certificate_template',
+        'auto_archive_days',
+        'start_time_label',
     ];
 
     protected $casts = [
@@ -37,6 +44,8 @@ class Activity extends Model
         'is_archived' => 'bool',
         'is_paid' => 'bool',
         'numbered_seating' => 'bool',
+        'requires_selection' => 'bool',
+        'first_timers_only' => 'bool',
         'reg_start_at' => 'datetime',
         'start_at' => 'datetime',
         'end_at' => 'datetime',

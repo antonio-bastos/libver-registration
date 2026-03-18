@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminActivityController;
 use App\Http\Controllers\Admin\AdminUsersController;
+use App\Http\Controllers\Admin\AttendanceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
@@ -24,6 +26,8 @@ Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
 
+use App\Http\Controllers\PaymentController;
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
@@ -32,10 +36,16 @@ Route::middleware(['auth'])->group(function () {
         ->name('registrations.store');
     Route::post('/registrations/{registration}/cancel', [RegistrationController::class, 'cancel'])
         ->name('registrations.cancel');
+        
+    // Payments
+    Route::get('/registrations/{registration}/invoice', [PaymentController::class, 'showInvoice'])
+        ->name('invoices.show');
+    Route::post('/registrations/{registration}/pay', [PaymentController::class, 'processMockPayment'])
+        ->name('payments.process'); // Dev/Admin only effectively
 
     Route::get('/waitlist/accept/{token}', [WaitlistController::class, 'accept'])
         ->name('waitlist.accept');
-    Route::post('/waitlist/decline/{token}', [WaitlistController::class, 'decline'])
+    Route::get('/waitlist/decline/{token}', [WaitlistController::class, 'decline'])
         ->name('waitlist.decline');
 
     Route::post('/media/upload', [MediaController::class, 'upload'])
@@ -45,4 +55,13 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/users/admin', [AdminUsersController::class, 'store'])
         ->name('admin.users.store');
+        
+    // Attendance
+    Route::get('/check-in/{token}', [AttendanceController::class, 'scan'])->name('admin.checkin.scan');
+    Route::post('/registrations/{registration}/absent', [AttendanceController::class, 'markAbsent'])->name('admin.registrations.absent');
+
+    // Activity Management
+    Route::get('/activities/{activity}', [AdminActivityController::class, 'show'])->name('admin.activities.show');
+    Route::get('/activities/{activity}/export', [AdminActivityController::class, 'export'])->name('admin.activities.export');
+    Route::post('/registrations/{registration}/promote', [AdminActivityController::class, 'promote'])->name('admin.registrations.promote');
 });

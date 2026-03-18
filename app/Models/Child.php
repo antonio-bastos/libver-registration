@@ -15,11 +15,17 @@ class Child extends Model
         'dob',
         'phone_emergency',
         'restrictions_until',
+        'absence_count',
+        'tags',
+        'loyalty_points',
     ];
 
     protected $casts = [
         'dob' => 'date',
         'restrictions_until' => 'datetime',
+        'tags' => 'array',
+        'absence_count' => 'integer',
+        'loyalty_points' => 'integer',
     ];
 
     public function parent(): BelongsTo
@@ -30,5 +36,10 @@ class Child extends Model
     public function registrations(): HasMany
     {
         return $this->hasMany(Registration::class);
+    }
+
+    public function isRestricted(): bool
+    {
+        return $this->restrictions_until !== null && $this->restrictions_until->isFuture();
     }
 }

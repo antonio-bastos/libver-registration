@@ -26,13 +26,17 @@ class WaitlistService
         return $this->db->transaction(function () use ($activityId) {
             $activity = Activity::query()->whereKey($activityId)->lockForUpdate()->firstOrFail();
 
-            $confirmedCount = Registration::query()
+            // Check effective capacity: Confirmed + Active Offers
+            $occupiedCount = Registration::query()
                 ->where('activity_id', $activity->id)
-                ->where('status', Registration::STATUS_CONFIRMED)
+                ->whereIn('status', [Registration::STATUS_CONFIRMED, Registration::STATUS_OFFER_SENT])
                 ->lockForUpdate()
                 ->count();
-
-            if ($activity->capacity !== null && $confirmedCount >= $activity->capacity) {
+            // If activity requires selection, do not auto-promote
+            if ($activity->requires_selection) {
+                return null;
+            }
+            if ($activity->capacity !== null && $occupiedCount >= $activity->capacity) {
                 return null;
             }
 
@@ -46,6 +50,9 @@ class WaitlistService
             if (!$nextRegistration) {
                 return null;
             }
+
+            // Invalidate any previous offers for this registration just in case
+            WaitlistOffer::where('registration_id', $nextRegistration->id)->delete();
 
             $offer = WaitlistOffer::query()->create([
                 'registration_id' => $nextRegistration->id,
@@ -62,35 +69,34 @@ class WaitlistService
         });
     }
 
-    public function acceptOffer(string $token, int $childId, int $parentId): Registration
+    public function acceptOffer(string $token): Registration
     {
-        return $this->db->transaction(function () use ($token, $childId, $parentId) {
+        return $this->db->transaction(function () use ($token) {
             $offer = WaitlistOffer::query()->where('token', $token)->lockForUpdate()->firstOrFail();
 
             if ($offer->expires_at && $offer->expires_at->isPast()) {
-                throw new RuntimeException('Offer expired.');
+                throw new RuntimeException('Offer has expired.');
+            }
+
+            if ($offer->accepted_at) {
+                throw new RuntimeException('Offer already accepted.');
             }
 
             $registration = Registration::query()->whereKey($offer->registration_id)->lockForUpdate()->firstOrFail();
-
-            $child = Child::query()
-                ->whereKey($childId)
-                ->where('user_id', $parentId)
-                ->firstOrFail();
-
-            if ($registration->child_id !== $child->id) {
-                throw new RuntimeException('Unauthorized accept.');
-            }
-
             $activity = Activity::query()->whereKey($registration->activity_id)->lockForUpdate()->firstOrFail();
-            $confirmedCount = Registration::query()
+
+            // Double check capacity, though the spot should have been "reserved" by the Offer logic
+            // But an Admin could have reduced capacity in the meantime.
+            $confirmedButNotMe = Registration::query()
                 ->where('activity_id', $activity->id)
                 ->where('status', Registration::STATUS_CONFIRMED)
-                ->lockForUpdate()
                 ->count();
-
-            if ($activity->capacity !== null && $confirmedCount >= $activity->capacity) {
-                throw new RuntimeException('Activity is full.');
+            
+            // Note: We don't count OFFER_SENT here because we ARE one of them.
+            
+            if ($activity->capacity !== null && $confirmedButNotMe >= $activity->capacity) {
+                // Edge case: Capacity reduced while offer was out.
+                throw new RuntimeException('Activity is full despite offer.');
             }
 
             $registration->status = Registration::STATUS_CONFIRMED;
@@ -98,6 +104,96 @@ class WaitlistService
 
             $offer->accepted_at = now();
             $offer->save();
+
+            $this->notificationService->queueRegistrationConfirmed($registration);
+
+            return $registration;
+        });
+    }
+
+    public function declineOffer(string $token): void
+    {
+        $this->db->transaction(function () use ($token) {
+            $offer = WaitlistOffer::query()->where('token', $token)->firstOrFail();
+            
+            if ($offer->accepted_at || $offer->declined_at) {
+                return;
+            }
+
+            $offer->declined_at = now();
+            $offer->save();
+
+            $registration = Registration::query()->whereKey($offer->registration_id)->first();
+            if ($registration) {
+                $registration->status = Registration::STATUS_CANCELED; // User declined, so they are out.
+                $registration->save();
+            }
+
+            // Immediately try to fill the spot
+            $this->promoteNextIfAvailable($registration->activity_id);
+        });
+    }
+
+    /**
+     * Admin manually promotes a specific user, bypassing queue order.
+     */
+    public function forcePromote(Registration $registration): void
+    {
+        $this->db->transaction(function () use ($registration) {
+            $registration = Registration::whereKey($registration->id)->lockForUpdate()->firstOrFail();
+            
+            if ($registration->status === Registration::STATUS_CONFIRMED) {
+                return;
+            }
+
+            // If offer sent, cancel it
+            WaitlistOffer::where('registration_id', $registration->id)->delete();
+
+            $registration->status = Registration::STATUS_CONFIRMED;
+            $registration->save();
+
+            // Notify
+            $this->notificationService->queueRegistrationConfirmed($registration);
+        });
+    }
+
+    public function expireOffers(): int
+    {
+        $expiredOffers = WaitlistOffer::query()
+            ->where('expires_at', '<=', now())
+            ->whereNull('accepted_at')
+            ->whereNull('declined_at')
+            ->get();
+
+        $count = 0;
+        foreach ($expiredOffers as $offer) {
+            $this->db->transaction(function () use ($offer) {
+                // Re-fetch to lock
+                $offer = WaitlistOffer::query()->whereKey($offer->id)->lockForUpdate()->first();
+                if (!$offer || $offer->accepted_at || $offer->declined_at) return;
+
+                $offer->declined_at = now(); // Mark as declined/expired
+                $offer->save();
+
+                $registration = Registration::query()->whereKey($offer->registration_id)->first();
+                if ($registration && $registration->status === Registration::STATUS_OFFER_SENT) {
+                    $registration->status = Registration::STATUS_CANCELED; // Or specialized STATUS_TIMEOUT
+                    $registration->save();
+                    
+                    // Notify user they missed it? 
+                    // $this->notificationService->queueWaitlistMissed($registration);
+                }
+                
+                // Try to fill the spot
+                if ($registration) {
+                    $this->promoteNextIfAvailable($registration->activity_id);
+                }
+            });
+            $count++;
+        }
+
+        return $count;
+    }
 
             $this->notificationService->queueRegistrationConfirmed($registration);
 

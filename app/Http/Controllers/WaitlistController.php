@@ -8,30 +8,57 @@ use Illuminate\Http\Request;
 
 class WaitlistController extends Controller
 {
-    public function accept(Request $request, string $token, WaitlistService $waitlistService): JsonResponse
+    private WaitlistService $waitlistService;
+
+    public function __construct(WaitlistService $waitlistService)
     {
-        $data = $request->validate([
-            'child_id' => ['required', 'integer'],
-        ]);
-
-        $registration = $waitlistService->acceptOffer(
-            $token,
-            (int) $data['child_id'],
-            (int) $request->user()->id
-        );
-
-        return response()->json([
-            'registration_id' => $registration->id,
-            'status' => $registration->status,
-        ]);
+        $this->waitlistService = $waitlistService;
     }
 
-    public function decline(Request $request, string $token, WaitlistService $waitlistService): JsonResponse
+    public function accept(Request $request, string $token)
     {
-        $waitlistService->declineOffer($token, (int) $request->user()->id);
+        try {
+            $registration = $this->waitlistService->acceptOffer($token);
 
-        return response()->json([
-            'status' => 'declined',
-        ]);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'registration_id' => $registration->id,
+                    'status' => $registration->status,
+                ]);
+            }
+
+            return redirect()->route('dashboard')
+                ->with('success', "You have successfully claimed the spot!");
+        } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['error' => $e->getMessage()], 400);
+            }
+
+            return redirect()->route('dashboard')
+                ->with('error', 'Unable to accept offer. It may have expired or been taken.');
+        }
+    }
+
+    public function decline(Request $request, string $token)
+    {
+        try {
+            $this->waitlistService->declineOffer($token);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'declined',
+                ]);
+            }
+
+            return redirect()->route('dashboard')
+                ->with('success', 'You have removed yourself from the waitlist.');
+        } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['error' => $e->getMessage()], 400);
+            }
+
+            return redirect()->route('dashboard')
+                ->with('error', 'Error processing your request.');
+        }
     }
 }

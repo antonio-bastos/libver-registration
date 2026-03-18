@@ -90,7 +90,7 @@
             gap: 24px;
         }
 
-        .nav a {
+        .nav-links a {
             text-decoration: none;
             color: var(--text-muted);
             font-size: 14px;
@@ -98,7 +98,7 @@
             transition: color 0.3s ease;
         }
 
-        .nav a:hover {
+        .nav-links a:hover {
             color: var(--primary);
         }
 
@@ -436,7 +436,7 @@
                 gap: 16px;
             }
 
-            .nav a {
+            .nav-links a {
                 font-size: 13px;
             }
         }
@@ -460,9 +460,9 @@
 <body>
     <header>
         <div class="nav">
-            <div class="brand">
+            <a href="{{ route('home') }}" class="brand" style="text-decoration: none;">
                 <i class="fas fa-book"></i> Public Library of Veria
-            </div>
+            </a>
             <div class="nav-links">
                 <a href="{{ route('login') }}" class="{{ request()->routeIs('login') ? 'nav-link-active' : '' }}">
                     <i class="fas fa-sign-in-alt"></i> Login

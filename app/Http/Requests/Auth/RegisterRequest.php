@@ -27,16 +27,16 @@ class RegisterRequest extends FormRequest
             'surname' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'phone' => ['required', 'string', 'max:40', 'regex:/^(\+30)?\s?69\d{8}$/'], // Basic Greek mobile regex
-            'card_number' => ['required', 'string', 'max:60'],
-            'dob' => ['required', 'date', 'before:today'],
+            'phone' => ['required', 'string', 'max:40', 'regex:/^(\+30)?\s?(69\d{8}|2\d{9})$/'], // Greek mobile or landline
+            'card_number' => ['nullable', 'string', 'max:60'],
+            'dob' => ['required', 'date', 'before:tomorrow'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'phone.regex' => 'The phone number must be a valid Greek mobile number.',
+            'phone.regex' => 'The phone number must be a valid Greek mobile or landline number.',
         ];
     }
 }

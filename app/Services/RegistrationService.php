@@ -14,30 +14,33 @@ class RegistrationService
     private ConflictService $conflictService;
     private NotificationService $notificationService;
     private WaitlistService $waitlistService;
+    private PaymentService $paymentService;
 
     public function __construct(
         DatabaseManager $db,
         ConflictService $conflictService,
         NotificationService $notificationService,
-        WaitlistService $waitlistService
+        WaitlistService $waitlistService,
+        PaymentService $paymentService
     ) {
         $this->db = $db;
         $this->conflictService = $conflictService;
         $this->notificationService = $notificationService;
         $this->waitlistService = $waitlistService;
+        $this->paymentService = $paymentService;
     }
 
-    public function registerChild(int $activityId, int $childId, int $parentId): Registration
+    public function registerChild(int $activityId, int $childId, int $parentId, array $options = []): Registration
     {
-        return $this->db->transaction(function () use ($activityId, $childId, $parentId) {
+        return $this->db->transaction(function () use ($activityId, $childId, $parentId, $options) {
             $activity = Activity::query()->whereKey($activityId)->lockForUpdate()->firstOrFail();
 
-            if ($activity->status !== 'active') {
+            if (!$activity->is_active) {
                 throw new RuntimeException('Activity is not active.');
             }
 
             if ($activity->reg_start_at && $activity->reg_start_at->isFuture()) {
-                throw new RuntimeException('Registration is not open.');
+                throw new RuntimeException('Registration is not yet open.');
             }
 
             $child = Child::query()
@@ -45,6 +48,24 @@ class RegistrationService
                 ->where('user_id', $parentId)
                 ->firstOrFail();
 
+            // 1. Blacklist Check
+            if ($child->isRestricted()) {
+                 throw new RuntimeException('Registration denied: Child is currently under restriction until ' . $child->restrictions_until->format('d/m/Y'));
+            }
+
+            // 2. First Timers Only Check
+            if ($activity->first_timers_only) {
+                $hasPriorRegistrations = Registration::query()
+                    ->where('child_id', $child->id)
+                    ->whereIn('status', [Registration::STATUS_CONFIRMED, Registration::STATUS_CANCELED]) // Even canceled counts? Maybe strictly attended? For now simple count.
+                    ->exists();
+                
+                if ($hasPriorRegistrations) {
+                    throw new RuntimeException('This activity is restricted to first-time participants only.');
+                }
+            }
+
+            // 3. Existing Registration Check
             $existingRegistration = Registration::query()
                 ->where('activity_id', $activity->id)
                 ->where('child_id', $child->id)
@@ -56,8 +77,10 @@ class RegistrationService
                 throw new RuntimeException('Child already registered.');
             }
 
+            // 4. Smart Conflict Check
             $this->conflictService->assertNoConflict($child->id, $activity->id);
 
+            // Determine Status
             $confirmedCount = Registration::query()
                 ->where('activity_id', $activity->id)
                 ->where('status', Registration::STATUS_CONFIRMED)
@@ -65,9 +88,12 @@ class RegistrationService
                 ->count();
 
             $status = Registration::STATUS_CONFIRMED;
-            $position = $confirmedCount + 1;
-
-            if ($activity->capacity !== null && $confirmedCount >= $activity->capacity) {
+            $position = null; // Position is typically for waitlist, but let's keep it null for confirmed unless needed.
+            
+            // "Allow unlimited registrations for interest expression, with selection afterward."
+            if ($activity->requires_selection) {
+                $status = Registration::STATUS_PENDING_APPROVAL;
+            } elseif ($activity->capacity !== null && $confirmedCount >= $activity->capacity) {
                 if (!$activity->waitlist_enabled) {
                     throw new RuntimeException('Activity is full.');
                 }
@@ -81,18 +107,27 @@ class RegistrationService
                 $position = ($maxPosition ?? 0) + 1;
             }
 
+            // Calculate fees
+            $feeAmount = $this->paymentService->calculateTotal($activity);
+            $paymentStatus = ($feeAmount > 0) ? Registration::PAYMENT_STATUS_UNPAID : Registration::PAYMENT_STATUS_PAID;
+
             $registration = Registration::query()->create([
                 'activity_id' => $activity->id,
                 'child_id' => $child->id,
                 'status' => $status,
                 'position' => $position,
+                'fee_amount' => $feeAmount,
+                'amount_paid' => 0,
+                'payment_status' => $paymentStatus,
+                'consent_media' => $options['consent_media'] ?? false,
             ]);
 
             if ($status === Registration::STATUS_CONFIRMED) {
                 $this->notificationService->queueRegistrationConfirmed($registration);
-            } else {
+            } elseif ($status === Registration::STATUS_WAITING) {
                 $this->notificationService->queueWaitlistAdded($registration);
             }
+            // If PENDING_APPROVAL, distinct notification?
 
             return $registration;
         });

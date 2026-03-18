@@ -5,3 +5,9 @@ $php = "C:\Users\anton\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.3_Micro
 $php = "C:\Users\anton\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.3_Microsoft.WinGet.Source_8wekyb3d8bbwe\php.exe"
 & $php artisan db:seed
 & $php artisan migrate:fresh --seed
+
+cd C:\Users\ESL0487\Documents\GitHub\libver-registration
+$php = "C:\Users\ESL0487\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.3_Microsoft.Winget.Source_8wekyb3d8bbwe\php.exe"
+& $php artisan serve
+& $php artisan serve
+& $php artisan migrate

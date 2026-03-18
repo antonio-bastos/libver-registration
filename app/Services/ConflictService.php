@@ -9,22 +9,29 @@ class ConflictService
 {
     public function assertNoConflict(int $childId, int $activityId): void
     {
-        $sessions = ActivitySession::query()
+        // 1. Get all sessions for the requested activity
+        $newSessions = ActivitySession::query()
             ->where('activity_id', $activityId)
             ->get(['start_at', 'end_at']);
 
-        foreach ($sessions as $session) {
-            $conflict = ActivitySession::query()
+        // 2. Find any CONFIRMED registrations for this child that overlap in time
+        // We look for existing sessions that overlap with ANY of the new sessions.
+        
+        foreach ($newSessions as $newSession) {
+            $hasConflict = ActivitySession::query()
                 ->whereHas('activity.registrations', function ($query) use ($childId) {
                     $query->where('child_id', $childId)
-                        ->where('status', 'confirmed');
+                          ->whereIn('status', ['confirmed', 'offer_sent']); // Include pending offers
                 })
-                ->where('start_at', '<', $session->end_at)
-                ->where('end_at', '>', $session->start_at)
+                ->where(function ($query) use ($newSession) {
+                    // Overlap logic: (StartA < EndB) AND (EndA > StartB)
+                    $query->where('start_at', '<', $newSession->end_at)
+                          ->where('end_at', '>', $newSession->start_at);
+                })
                 ->exists();
 
-            if ($conflict) {
-                throw new RuntimeException('Child has a conflicting activity.');
+            if ($hasConflict) {
+                throw new RuntimeException('Smart Conflict Check: Child is already enrolled in another activity at this time.');
             }
         }
     }
