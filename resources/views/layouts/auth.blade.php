@@ -96,6 +96,9 @@
             font-size: 14px;
             font-weight: 500;
             transition: color 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .nav-links a:hover {
@@ -378,12 +381,12 @@
             color: var(--primary-dark);
             text-decoration: underline;
         }
-        
+
         /* Password Toggle */
         .password-container {
             position: relative;
         }
-        
+
         .password-toggle {
             position: absolute;
             right: 14px;
@@ -393,7 +396,7 @@
             cursor: pointer;
             z-index: 10;
         }
-        
+
         .password-toggle:hover {
             color: var(--primary);
         }
@@ -419,7 +422,7 @@
                 flex-direction: column;
                 align-items: flex-start;
             }
-            
+
             .form-actions {
                 flex-direction: column;
             }
@@ -454,24 +457,13 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-    </style>
-    @stack('styles')
-</head>
-<body>
+
+        </style>
+            @stack('styles')
+        </head>
+    <body>
     <header>
-        <div class="nav">
-            <a href="{{ route('home') }}" class="brand" style="text-decoration: none;">
-                <i class="fas fa-book"></i> Public Library of Veria
-            </a>
-            <div class="nav-links">
-                <a href="{{ route('login') }}" class="{{ request()->routeIs('login') ? 'nav-link-active' : '' }}">
-                    <i class="fas fa-sign-in-alt"></i> Login
-                </a>
-                <a href="{{ route('register') }}" class="{{ request()->routeIs('register') ? 'nav-link-active' : '' }}">
-                    <i class="fas fa-user-plus"></i> Registration
-                </a>
-            </div>
-        </div>
+        @include('components.navbar')
     </header>
 
     <main class="main">

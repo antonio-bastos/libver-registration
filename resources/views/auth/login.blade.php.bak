@@ -384,27 +384,11 @@
 </head>
 <body>
     <header>
-        <div class="nav">
-            <div class="brand">
-                <i class="fas fa-book"></i> Public Library of Veria
-            </div>
-            <div class="nav-links">
-                <a href="{{ route('login') }}" style="color: var(--primary); font-weight: 600;">
-                    <i class="fas fa-sign-in-alt"></i> Login
-                </a>
-                <a href="{{ route('register') }}">
-                    <i class="fas fa-user-plus"></i> Registration
-                </a>
-            </div>
-        </div>
+        @include('components.navbar')
     </header>
 
     <main class="main">
         <div class="form-wrapper">
-            <div class="form-header">
-                <h1>Welcome Back</h1>
-                <p>Sign in to your library account</p>
-            </div>
 
             <div class="container">
                 @if ($errors->any())
