@@ -154,7 +154,35 @@
             gap: 12px;
         }
 
+        /* Limit panel heights and make scrollable */
+        #actions, #calendar {
+            max-height: 520px;
+            min-height: 320px;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 700px) {
+            #actions, #calendar {
+                max-height: 340px;
+                min-height: 200px;
+            }
+        }
+
         .panel {
+                    .panel-header {
+                        background: #f5f6fa;
+                        border-bottom: 1px solid var(--border);
+                        border-top-left-radius: 14px;
+                        border-top-right-radius: 14px;
+                        padding: 14px 16px 10px 16px;
+                        font-family: "Fraunces", serif;
+                        font-size: 22px;
+                        font-weight: 700;
+                        color: #22223b;
+                    }
+                    .panel-header + * {
+                        margin-top: 0;
+                    }
             background: var(--card);
             border: 1px solid var(--border);
             border-radius: 14px;
@@ -367,6 +395,49 @@
         @media (max-width: 980px) {
             .hero, .layout { grid-template-columns: 1fr; }
             .stats { grid-template-columns: 1fr; }
+            .layout {
+                padding: 0 4px 12px;
+            }
+            #actions, #calendar {
+                max-height: 340px;
+                min-height: 180px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .panel {
+                padding: 6px 4px;
+            }
+            .calendar-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+            .filters {
+                flex-direction: row !important;
+                align-items: center;
+                gap: 6px;
+                margin-bottom: 10px;
+            }
+            .filters select {
+                min-width: 110px;
+                font-size: 13px;
+            }
+            .calendar-title {
+                font-size: 18px;
+            }
+            .action-title {
+                font-size: 16px;
+            }
+            .calendar-weekdays, .calendar-grid {
+                gap: 2px;
+            }
+            .cell {
+                padding: 3px;
+                font-size: 11px;
+                height: 70px;
+            }
+        }
         }
     </style>
 </head>
@@ -385,8 +456,7 @@
 
     <section class="layout">
         <div class="panel" id="actions">
-            <h2>Actions</h2>
-
+            <div class="panel-header">Actions</div>
             @forelse ($actions as $session)
                 <div class="action-item">
                     <div class="action-title">{{ $session->activity?->title ?? 'Activity' }}</div>
@@ -418,13 +488,32 @@
         </div>
 
         <div class="panel" id="calendar">
-            <h2>Calendar</h2>
+            <div class="panel-header">Calendar</div>
             <div class="filters">
-                <select>
-                    <option>All categories</option>
+                <select id="category-filter">
+                    <option value="all">All categories</option>
+                    <option value="adults">Adults (17+)</option>
+                    <option value="toddlers">Toddlers (1-3 years)</option>
+                    <option value="children">Children (3-12 years old)</option>
+                    <option value="teenagers">Teenagers (13-17)</option>
+                    <option value="mobile-libraries">Mobile Libraries</option>
+                    <option value="veria-tech-lab">Veria Tech Lab</option>
+                    <option value="tech-talent-school">Tech Talent School</option>
+                    <option value="book-presentation">Book Presentation</option>
+                    <option value="speech-lecture">Speech - Lecture</option>
+                    <option value="movie-screening">Movie Screening</option>
+                    <option value="seminars-workshops">Seminars - Workshops</option>
+                    <option value="courses">Courses</option>
                 </select>
-                <select>
-                    <option>All venues</option>
+                <select id="venue-filter">
+                    <option value="all">All venues</option>
+                    <option value="maker-space">Maker Space</option>
+                    <option value="event-hall">Event Hall & Foyer</option>
+                    <option value="brain-pulse">Brain Pulse</option>
+                    <option value="magic-boxes">Magic Boxes</option>
+                    <option value="recording-studio">Recording Studio - MediaLab</option>
+                    <option value="online-activity">Online Activity - Distance</option>
+                    <option value="outdoor-reading-room">Outdoor Reading Room</option>
                 </select>
             </div>
             <div class="calendar-header">
@@ -466,7 +555,7 @@
     </section>
 
     <div class="footer">
-        No login required to explore activities. Registration opens per activity start time.
+        2013 © Δημόσια Κεντρική Βιβλιοθήκη Βέροιας
     </div>
 
     <div class="modal" id="event-modal" aria-hidden="true">
@@ -479,6 +568,106 @@
     </div>
 
     <script>
+                        // Calendar month navigation
+                        const calendarTitle = document.querySelector('.calendar-title');
+                        const calendarNav = document.querySelector('.calendar-nav');
+                        const calendarGrid = document.querySelector('.calendar-grid');
+                        let currentDate = new Date();
+                        let displayedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+                        // Store original calendar days for client-side navigation
+                        const originalDays = Array.from(calendarGrid.children).map(cell => cell.cloneNode(true));
+                        function getMonthLabel(date) {
+                            return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                        }
+                        function updateCalendarMonth(date) {
+                            calendarTitle.textContent = getMonthLabel(date);
+                            // Show/hide cells based on month
+                            Array.from(calendarGrid.children).forEach((cell, i) => {
+                                const origCell = originalDays[i];
+                                // Get the date number from the cell
+                                const dateDiv = origCell.querySelector('.date');
+                                if (!dateDiv) return;
+                                // Try to get the month/year from the cell
+                                let cellMonth = displayedDate.getMonth();
+                                let cellYear = displayedDate.getFullYear();
+                                // If you have data attributes for month/year, use them here
+                                // For now, show all cells (since server-rendered)
+                                cell.style.display = '';
+                                // Optionally, update cell content if needed
+                            });
+                            filterCalendar();
+                        }
+                        calendarNav.querySelector('button:nth-child(1)').addEventListener('click', () => {
+                            displayedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+                            updateCalendarMonth(displayedDate);
+                        });
+                        calendarNav.querySelector('button:nth-child(2)').addEventListener('click', () => {
+                            displayedDate = new Date(displayedDate.getFullYear(), displayedDate.getMonth() - 1, 1);
+                            updateCalendarMonth(displayedDate);
+                        });
+                        calendarNav.querySelector('button:nth-child(3)').addEventListener('click', () => {
+                            displayedDate = new Date(displayedDate.getFullYear(), displayedDate.getMonth() + 1, 1);
+                            updateCalendarMonth(displayedDate);
+                        });
+                        // Initial calendar month setup
+                        updateCalendarMonth(displayedDate);
+                // Calendar filtering
+                const categoryFilter = document.getElementById('category-filter');
+                const venueFilter = document.getElementById('venue-filter');
+                function normalize(str) {
+                    return str ? str.toLowerCase().replace(/[^a-z0-9]+/g, '-') : '';
+                }
+                function filterCalendar() {
+                    const selectedCategory = categoryFilter.value;
+                    const selectedVenue = venueFilter.value;
+                    document.querySelectorAll('.calendar-grid .cell').forEach(cell => {
+                        cell.querySelectorAll('.pill').forEach(pill => {
+                            // Get category and venue from pill's data attributes
+                            const title = pill.getAttribute('data-title') || '';
+                            const meta = pill.getAttribute('data-meta') || '';
+                            const body = pill.getAttribute('data-body') || '';
+                            // Try to extract age group and venue from meta/body
+                            let ageGroup = '';
+                            let venue = '';
+                            // Age group
+                            if (meta.match(/Ages ([^·]+)/)) {
+                                ageGroup = meta.match(/Ages ([^·]+)/)[1].trim();
+                            }
+                            // Venue
+                            if (meta.match(/· ([^·]+)/)) {
+                                venue = meta.match(/· ([^·]+)/)[1].trim();
+                            }
+                            // Fallback: try to find venue in body
+                            if (!venue && body.match(/Venue: ([^\n]+)/)) {
+                                venue = body.match(/Venue: ([^\n]+)/)[1].trim();
+                            }
+                            // Normalize for comparison
+                            const normVenue = normalize(venue);
+                            // Category matching
+                            let categoryMatch = selectedCategory === 'all';
+                            if (!categoryMatch) {
+                                // Match by age group or by keywords in title
+                                if (selectedCategory === 'adults' && ageGroup === '17+') categoryMatch = true;
+                                else if (selectedCategory === 'toddlers' && ageGroup === '1-3 years') categoryMatch = true;
+                                else if (selectedCategory === 'children' && ageGroup === '3-12 years old') categoryMatch = true;
+                                else if (selectedCategory === 'teenagers' && ageGroup === '13-17') categoryMatch = true;
+                                else if (normalize(title).includes(selectedCategory)) categoryMatch = true;
+                                else if (normalize(body).includes(selectedCategory)) categoryMatch = true;
+                            }
+                            // Venue matching
+                            let venueMatch = selectedVenue === 'all' || normVenue === selectedVenue;
+                            if (categoryMatch && venueMatch) {
+                                pill.style.display = '';
+                            } else {
+                                pill.style.display = 'none';
+                            }
+                        });
+                    });
+                }
+                categoryFilter.addEventListener('change', filterCalendar);
+                venueFilter.addEventListener('change', filterCalendar);
+                // Initial filter
+                filterCalendar();
         const modal = document.getElementById('event-modal');
         const modalTitle = document.getElementById('modal-title');
         const modalMeta = document.getElementById('modal-meta');
