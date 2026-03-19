@@ -12,22 +12,16 @@ class RegistrationService
 {
     private DatabaseManager $db;
     private ConflictService $conflictService;
-    private NotificationService $notificationService;
     private WaitlistService $waitlistService;
-    private PaymentService $paymentService;
 
     public function __construct(
         DatabaseManager $db,
         ConflictService $conflictService,
-        NotificationService $notificationService,
-        WaitlistService $waitlistService,
-        PaymentService $paymentService
+        WaitlistService $waitlistService
     ) {
         $this->db = $db;
         $this->conflictService = $conflictService;
-        $this->notificationService = $notificationService;
         $this->waitlistService = $waitlistService;
-        $this->paymentService = $paymentService;
     }
 
     public function registerChild(int $activityId, int $childId, int $parentId, array $options = []): Registration
@@ -132,12 +126,11 @@ class RegistrationService
                 ->max('seat_number');
             $seatNumber = ($lastSeat ?? 0) + 1;
         }
-
         $feeAmount = (float) ($activity->fee ?? 0);
         $paymentStatus = ($feeAmount > 0) ? Registration::PAYMENT_STATUS_UNPAID : Registration::PAYMENT_STATUS_PAID;
 
         $registration = Registration::query()->create([
-            'activity_id' => $activity->id,
+            'activity_id' => $activityId,
             'user_id' => $userId,
             'child_id' => $child?->id,
             'status' => $status,
@@ -148,12 +141,6 @@ class RegistrationService
             'payment_status' => $paymentStatus,
             'consent_media' => $options['consent_media'] ?? false,
         ]);
-
-        if ($status === Registration::STATUS_CONFIRMED) {
-            $this->notificationService->queueRegistrationConfirmed($registration);
-        } elseif ($status === Registration::STATUS_WAITING) {
-            $this->notificationService->queueWaitlistAdded($registration);
-        }
 
         return $registration;
     }
@@ -177,8 +164,6 @@ class RegistrationService
             if ($previousStatus === Registration::STATUS_CONFIRMED) {
                 $this->waitlistService->promoteNextIfAvailable($registration->activity_id);
             }
-
-            $this->notificationService->queueAdminCancellation($registration);
 
             return $registration;
         });

@@ -8,7 +8,6 @@
             'phone' => '6900000001',
             'card_number' => 'LIB-ADMIN-001',
             'dob' => '1985-04-12',
-            'email_verified_at' => now(),
         ]);
 
         $parent = User::query()->create([
@@ -20,7 +19,6 @@
             'phone' => '6900000002',
             'card_number' => 'LIB-00021',
             'dob' => '1990-09-15',
-            'email_verified_at' => now(),
         ]);
 
         $childA = Child::query()->create([

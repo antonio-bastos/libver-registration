@@ -13,12 +13,10 @@ use RuntimeException;
 class WaitlistService
 {
     private DatabaseManager $db;
-    private NotificationService $notificationService;
 
-    public function __construct(DatabaseManager $db, NotificationService $notificationService)
+    public function __construct(DatabaseManager $db)
     {
         $this->db = $db;
-        $this->notificationService = $notificationService;
     }
 
     public function promoteNextIfAvailable(int $activityId): ?WaitlistOffer
@@ -63,7 +61,6 @@ class WaitlistService
             $nextRegistration->status = Registration::STATUS_OFFER_SENT;
             $nextRegistration->save();
 
-            $this->notificationService->queueWaitlistOffer($nextRegistration, $offer);
 
             return $offer;
         });
@@ -105,7 +102,6 @@ class WaitlistService
             $offer->accepted_at = now();
             $offer->save();
 
-            $this->notificationService->queueRegistrationConfirmed($registration);
 
             return $registration;
         });
@@ -155,7 +151,6 @@ class WaitlistService
             $registration->save();
 
             // Notify
-            $this->notificationService->queueRegistrationConfirmed($registration);
         });
     }
 

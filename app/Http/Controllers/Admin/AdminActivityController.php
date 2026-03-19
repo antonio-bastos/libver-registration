@@ -36,6 +36,31 @@ class AdminActivityController extends Controller
         return back()->with('success', 'User manually promoted to Confirmed.');
     }
 
+    public function markAsPaid(Registration $registration)
+    {
+        $registration->payment_status = Registration::PAYMENT_STATUS_PAID;
+        $registration->amount_paid = $registration->fee_amount;
+        $meta = $registration->payment_metadata ?? [];
+        $meta[] = [
+            'amount' => $registration->fee_amount,
+            'date' => now()->toIso8601String(),
+            'reference' => 'ADMIN-MANUAL',
+        ];
+        $registration->payment_metadata = $meta;
+        $registration->save();
+
+        return back()->with('success', 'Registration marked as paid.');
+    }
+
+    public function markAsUnpaid(Registration $registration)
+    {
+        $registration->payment_status = Registration::PAYMENT_STATUS_UNPAID;
+        $registration->amount_paid = 0;
+        $registration->save();
+
+        return back()->with('success', 'Registration marked as unpaid.');
+    }
+
     public function export(Activity $activity)
     {
         $response = new StreamedResponse(function () use ($activity) {

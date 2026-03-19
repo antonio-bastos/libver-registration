@@ -23,7 +23,6 @@ class AdminBootstrapService
                 'email' => $email,
                 'password' => Hash::make($password),
                 'role' => User::ROLE_ADMIN,
-                'email_verified_at' => now(),
             ]);
         });
     }

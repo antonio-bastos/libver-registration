@@ -3,14 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
-    use Notifiable;
-
     public const ROLE_ADMIN = 'admin';
     public const ROLE_INSTRUCTOR = 'instructor';
     public const ROLE_PARENT = 'parent';
@@ -21,7 +17,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'role',
-        'email_verified_at',
         'phone',
         'card_number',
         'dob',
@@ -33,7 +28,6 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     protected $casts = [
-        'email_verified_at' => 'datetime',
         'dob' => 'date',
     ];
 

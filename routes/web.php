@@ -10,7 +10,6 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\WaitlistController;
-use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -35,11 +34,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/registrations', [RegistrationController::class, 'store'])->name('registrations.store');
     Route::post('/registrations/{registration}/cancel', [RegistrationController::class, 'cancel'])->name('registrations.cancel');
 
-    // Payments
-    Route::get('/registrations/{registration}/invoice', [PaymentController::class, 'showInvoice'])->name('invoices.show');
-    Route::post('/registrations/{registration}/pay', [PaymentController::class, 'processMockPayment'])->name('payments.process');
-
     Route::get('/waitlist/accept/{token}', [WaitlistController::class, 'accept'])->name('waitlist.accept');
+
     Route::get('/waitlist/decline/{token}', [WaitlistController::class, 'decline'])->name('waitlist.decline');
 
     Route::post('/media/upload', [MediaController::class, 'upload'])->name('media.upload');
@@ -77,4 +73,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/activities/{activity}/show', [AdminActivityController::class, 'show'])->name('admin.activities.show_details');
     Route::get('/activities/{activity}/export', [AdminActivityController::class, 'export'])->name('admin.activities.export');
     Route::post('/registrations/{registration}/promote', [AdminActivityController::class, 'promote'])->name('admin.registrations.promote');
+    Route::post('/registrations/{registration}/mark-paid', [AdminActivityController::class, 'markAsPaid'])->name('admin.registrations.mark_paid');
+    Route::post('/registrations/{registration}/mark-unpaid', [AdminActivityController::class, 'markAsUnpaid'])->name('admin.registrations.mark_unpaid');
 });

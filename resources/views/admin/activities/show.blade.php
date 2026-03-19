@@ -81,6 +81,20 @@
                                         <button type="submit" class="btn btn-sm btn-outline" style="color: var(--danger);">Mark Absent</button>
                                     </form>
                                 @endif
+
+                                @if($reg->fee_amount > 0)
+                                    @if($reg->payment_status !== 'paid')
+                                        <form action="{{ route('admin.registrations.mark_paid', $reg) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline" style="color: var(--success);"><i class="fas fa-check"></i> Mark Paid</button>
+                                        </form>
+                                    @else
+                                        <form action="{{ route('admin.registrations.mark_unpaid', $reg) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline" style="color: var(--warning);"><i class="fas fa-undo"></i> Mark Unpaid</button>
+                                        </form>
+                                    @endif
+                                @endif
                             </div>
                         </td>
                     </tr>
