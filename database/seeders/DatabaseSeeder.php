@@ -1,24 +1,3 @@
-<?php
-
-namespace Database\Seeders;
-
-use App\Models\Activity;
-use App\Models\ActivitySession;
-use App\Models\Child;
-use App\Models\Registration;
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
-
-class DatabaseSeeder extends Seeder
-{
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
-    public function run(): void
     {
         $admin = User::query()->create([
             'name' => 'Admin',
@@ -146,11 +125,3 @@ class DatabaseSeeder extends Seeder
             'position' => 1,
         ]);
 
-        Registration::query()->create([
-            'activity_id' => $activityB->id,
-            'child_id' => $childB->id,
-            'status' => Registration::STATUS_CONFIRMED,
-            'position' => 1,
-        ]);
-    }
-}

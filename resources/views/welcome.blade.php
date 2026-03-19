@@ -3,14 +3,14 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Public Library of Veria</title>
+    <title>Veria Central Public Library</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary: #2563eb;
+            --primary: #308bd6;
             --primary-dark: #1d4ed8;
             --primary-light: #3b82f6;
             --danger: #ef4444;
@@ -19,7 +19,7 @@
             --bg-light: #f8fafc;
             --bg-white: #ffffff;
             --border: #e2e8f0;
-            --text-dark: #1e293b;
+            --text-dark: #000000;
             --text-muted: #475569;
             --text-light: #94a3b8;
             --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
@@ -32,9 +32,9 @@
             --ink: #23272e;
             --muted: #6b7280;
             --card: #f9fafb;
-            --accent: #2563eb;
+            --accent: #308bd6;
             --accent-deep: #22304a;
-            --pill: #2563eb;
+            --pill: #308bd6;
         }
 
         * { box-sizing: border-box; }
@@ -52,51 +52,6 @@
             position: sticky;
             top: 0;
             z-index: 100;
-        }
-
-        .nav {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 16px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .brand {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 24px;
-        }
-
-        .nav a {
-            text-decoration: none;
-            color: var(--text-muted);
-            font-size: 14px;
-            font-weight: 500;
-            transition: color 0.3s ease;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .nav a:hover {
-            color: var(--primary);
-        }
-
-        .nav-link-active {
-            color: var(--primary) !important;
-            font-weight: 600 !important;
         }
 
         .hero {
@@ -217,7 +172,7 @@
         .action-title {
             font-size: 19px;
             font-weight: 700;
-            color: #2563eb;
+            color: #308bd6;
             margin-bottom: 4px;
             letter-spacing: 0.02em;
             text-shadow: 0 1px 4px rgba(55,90,127,0.08);
@@ -234,7 +189,7 @@
             margin-top: 18px;
             font-size: 13px;
             font-weight: 600;
-            background: #2563eb;
+            background: #308bd6;
             color: #fff;
             padding: 7px 16px;
             border-radius: 16px;
@@ -421,7 +376,7 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
-            z-index: 50;
+            z-index: 2000;
         }
 
         .modal.active { display: flex; }
@@ -430,6 +385,8 @@
             background: #ffffff;
             max-width: 520px;
             width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
             border-radius: 20px;
             padding: 40px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
@@ -437,11 +394,22 @@
             border: 1px solid #f1f5f9;
         }
 
+        .modal-card::-webkit-scrollbar {
+            width: 6px;
+        }
+        .modal-card::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .modal-card::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
         .modal-title {
             font-size: 28px;
             font-weight: 700;
             margin: 0 0 12px;
-            color: #1e293b;
+            color: #000000;
             line-height: 1.2;
         }
 
@@ -475,7 +443,7 @@
 
         .modal-close:hover {
             background: #e2e8f0;
-            color: #1e293b;
+            color: #000000;
             transform: scale(1.1);
         }
 
@@ -528,26 +496,44 @@
             @forelse ($actions as $session)
                 <div class="action-item">
                     <div class="action-title" data-modal
+                        data-activity-id="{{ $session->activity_id }}"
                         data-title="{{ $session->activity?->title ?? 'Activity' }}"
                         data-meta="{{ $session->start_at->format('d/m/Y H:i') }}"
                         data-body="{{ strip_tags($session->activity?->description_html ?? '') }}"
-                        style="cursor:pointer;"
-                    >{{ $session->activity?->title ?? 'Activity' }}</div>
+                        style="cursor:pointer; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;"
+                    >
+                        <span>{{ $session->activity?->title ?? 'Activity' }}</span>
+                        @if ($session->activity?->age_group)
+                            <span style="font-size: 12px; font-weight: 600; color: #475569; background: #e2e8f0; padding: 2px 8px; border-radius: 12px; letter-spacing: 0.02em;">
+                                {{ $session->activity->age_group }}
+                            </span>
+                        @endif
+                    </div>
                     <div class="action-meta">
                         {{ $session->start_at->format('d/m/Y H:i') }}
-                        @if ($session->activity?->age_group)
-                            · Ages {{ $session->activity->age_group }}
-                        @endif
                         @if ($session->location)
                             · {{ $session->location }}
                         @elseif ($session->activity?->location)
                             · {{ $session->activity->location }}
+                        @endif
+                        
+                        @if ($session->activity?->reg_start_at)
+                            @if ($session->activity->reg_start_at->isFuture())
+                                <div style="color: var(--warning); font-weight: 600; margin-top: 4px;">
+                                    <i class="fas fa-clock"></i> Registrations open: {{ $session->activity->reg_start_at->format('M d, Y @ H:i') }}
+                                </div>
+                            @else
+                                <div style="color: var(--success); font-weight: 600; margin-top: 4px;">
+                                    <i class="fas fa-check-circle"></i> Registrations open
+                                </div>
+                            @endif
                         @endif
                     </div>
                     <div>{{ \Illuminate\Support\Str::limit(strip_tags($session->activity?->description_html ?? ''), 140) }}</div>
                     <button
                         class="action-btn"
                         data-modal
+                        data-activity-id="{{ $session->activity_id }}"
                         data-title="{{ $session->activity?->title ?? 'Activity' }}"
                         data-meta="{{ $session->start_at->format('d/m/Y H:i') }}"
                         data-body="{{ strip_tags($session->activity?->description_html ?? '') }}"
@@ -613,7 +599,7 @@
     </section>
 
     <div class="footer">
-        2026 © Public Library of Veria
+        2026 © Veria Central Public Library
     </div>
 
     <div class="modal" id="event-modal" aria-hidden="true">
@@ -622,8 +608,49 @@
             <h3 class="modal-title" id="modal-title">Event Title</h3>
             <div class="modal-meta" id="modal-meta"></div>
             <div id="modal-body"></div>
-            <div class="modal-footer">
-                <button type="button" class="modal-btn">Register for Event</button>
+            <div class="modal-footer" id="modal-actions-container">
+                @auth
+                    <form action="{{ route('registrations.store') }}" method="POST" id="registration-form" style="width: 100%;">
+                        @csrf
+                        <input type="hidden" name="activity_id" id="modal-activity-id">
+                        
+                        <div style="margin-bottom: 20px; text-align: left;">
+                            <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #000000;">Who is attending?</label>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <label style="display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; background: #f8fafc;">
+                                    <input type="checkbox" name="register_self" value="1" style="width: 18px; height: 18px;">
+                                    <span style="font-size: 14px; font-weight: 600;">Myself ({{ auth()->user()->name }} {{ auth()->user()->surname }})</span>
+                                </label>
+
+                                @foreach(auth()->user()->children as $child)
+                                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                                        <input type="checkbox" name="child_ids[]" value="{{ $child->id }}" style="width: 18px; height: 18px;">
+                                        <span style="font-size: 14px;">{{ $child->first_name }} {{ $child->last_name }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+
+                            @if(auth()->user()->children->isEmpty())
+                                <p style="font-size: 13px; color: #64748b; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px dashed var(--border);">
+                                    No family members found. <a href="{{ route('dashboard') }}" style="color: var(--primary); font-weight: 600;">Add yourself or children in your dashboard</a> to register.
+                                </p>
+                            @endif
+                        </div>
+
+                        <button type="submit" class="modal-btn" id="modal-register-btn" {{ auth()->user()->children->isEmpty() ? 'disabled' : '' }} style="width: 100%;">
+                            Confirm Registration
+                        </button>
+                    </form>
+                @else
+                    <div style="text-align: center; width: 100%;">
+                        <p style="margin-bottom: 16px; color: #475569;">You must be logged in to register for events.</p>
+                        <div style="display: flex; gap: 12px; justify-content: center;">
+                            <a href="{{ route('login') }}" class="modal-btn" style="text-decoration: none;">Login</a>
+                            <a href="{{ route('register') }}" class="modal-btn" style="text-decoration: none; background: #f1f5f9; color: #000000;">Create Account</a>
+                        </div>
+                    </div>
+                @endauth
             </div>
         </div>
     </div>
@@ -761,11 +788,15 @@
         const modalTitle = document.getElementById('modal-title');
         const modalMeta = document.getElementById('modal-meta');
         const modalBody = document.getElementById('modal-body');
+        const modalActivityId = document.getElementById('modal-activity-id');
 
         function openModal(trigger) {
             modalTitle.textContent = trigger.getAttribute('data-title') || 'Event';
             modalMeta.textContent = trigger.getAttribute('data-meta') || '';
             modalBody.textContent = trigger.getAttribute('data-body') || '';
+            if (modalActivityId) {
+                modalActivityId.value = trigger.getAttribute('data-activity-id') || '';
+            }
             modal.classList.add('active');
             modal.setAttribute('aria-hidden', 'false');
         }
@@ -784,14 +815,6 @@
 
         document.querySelectorAll('[data-modal-close]').forEach(btn => btn.addEventListener('click', closeModal));
         modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
-
-        // Add dummy event for testing
-        sessionsByDate['2026-03-23'] = sessionsByDate['2026-03-23'] || [];
-        sessionsByDate['2026-03-23'].push({
-            title: 'Test Dummy Event',
-            meta: '23/03/2026 17:00',
-            description: 'This is a dummy event for tooltip testing.'
-        });
 
         // Tooltip logic
         function createTooltip(element, title, meta) {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login - Public Library of Veria</title>
+    <title>Login - Veria Central Public Library</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
         }
 
         :root {
-            --primary: #2563eb;
+            --primary: #308bd6;
             --primary-dark: #1d4ed8;
             --primary-light: #3b82f6;
             --danger: #ef4444;
@@ -25,7 +25,7 @@
             --bg-light: #f8fafc;
             --bg-white: #ffffff;
             --border: #e2e8f0;
-            --text-dark: #1e293b;
+            --text-dark: #000000;
             --text-muted: #475569;
             --text-light: #94a3b8;
             --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);

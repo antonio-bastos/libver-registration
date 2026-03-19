@@ -130,7 +130,9 @@ class WaitlistService
             }
 
             // Immediately try to fill the spot
-            $this->promoteNextIfAvailable($registration->activity_id);
+            if ($registration) {
+                $this->promoteNextIfAvailable($registration->activity_id);
+            }
         });
     }
 
@@ -193,36 +195,5 @@ class WaitlistService
         }
 
         return $count;
-    }
-
-            $this->notificationService->queueRegistrationConfirmed($registration);
-
-            return $registration;
-        });
-    }
-
-    public function declineOffer(string $token, int $parentId): void
-    {
-        $this->db->transaction(function () use ($token, $parentId) {
-            $offer = WaitlistOffer::query()->where('token', $token)->lockForUpdate()->firstOrFail();
-            $registration = Registration::query()->whereKey($offer->registration_id)->lockForUpdate()->firstOrFail();
-
-            $child = Child::query()
-                ->whereKey($registration->child_id)
-                ->where('user_id', $parentId)
-                ->firstOrFail();
-
-            if ($child->id !== $registration->child_id) {
-                throw new RuntimeException('Unauthorized decline.');
-            }
-
-            $offer->declined_at = now();
-            $offer->save();
-
-            $registration->status = Registration::STATUS_WAITING;
-            $registration->save();
-
-            $this->promoteNextIfAvailable($registration->activity_id);
-        });
     }
 }

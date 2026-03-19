@@ -20,6 +20,7 @@ class Registration extends Model
 
     protected $fillable = [
         'activity_id',
+        'user_id',
         'child_id',
         'status',
         'position',
@@ -55,6 +56,11 @@ class Registration extends Model
     public function activity(): BelongsTo
     {
         return $this->belongsTo(Activity::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function child(): BelongsTo

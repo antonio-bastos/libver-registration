@@ -1,6 +1,6 @@
 @extends('layouts.auth')
 
-@section('title', 'Register - Public Library of Veria')
+@section('title', 'Register - Veria Central Public Library')
 @section('width', '600px')
 
 @push('styles')
@@ -153,7 +153,7 @@
     .strength-strong { background-color: #22c55e; }
     
     button[type="submit"] {
-        background-color: #2563eb;
+        background-color: #308bd6;
         color: white;
         border: none;
         border-radius: 6px;
@@ -358,7 +358,7 @@
         </div>
 
         <div class="auth-footer" style="text-align: center; margin-top: 25px; color: #64748b; font-size: 0.9em;">
-            Already have an account? <a href="{{ route('login') }}" style="color: #2563eb; font-weight: 600; text-decoration: none;">Sign in here</a>
+            Already have an account? <a href="{{ route('login') }}" style="color: #308bd6; font-weight: 600; text-decoration: none;">Sign in here</a>
         </div>
     </form>
 @endsection

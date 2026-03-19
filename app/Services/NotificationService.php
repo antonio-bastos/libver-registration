@@ -14,13 +14,13 @@ class NotificationService
     {
         $this->queue(
             'registration_confirmed',
-            'email',
-            $registration->child->parent->email,
+            'system',
+            'user:' . $registration->user_id,
             [
                 'registration_id' => $registration->id,
                 'activity_id' => $registration->activity_id,
             ],
-            $this->dedupeKey('registration_confirmed', $registration->id, $registration->child_id)
+            $this->dedupeKey('registration_confirmed', $registration->id, $registration->child_id ?? 0)
         );
     }
 
@@ -28,13 +28,13 @@ class NotificationService
     {
         $this->queue(
             'waitlist_added',
-            'email',
-            $registration->child->parent->email,
+            'system',
+            'user:' . $registration->user_id,
             [
                 'registration_id' => $registration->id,
                 'activity_id' => $registration->activity_id,
             ],
-            $this->dedupeKey('waitlist_added', $registration->id, $registration->child_id)
+            $this->dedupeKey('waitlist_added', $registration->id, $registration->child_id ?? 0)
         );
     }
 
@@ -42,8 +42,8 @@ class NotificationService
     {
         $this->queue(
             'waitlist_offer',
-            'email',
-            $registration->child->parent->email,
+            'system',
+            'user:' . $registration->user_id,
             [
                 'registration_id' => $registration->id,
                 'offer_token' => $offer->token,
@@ -57,8 +57,8 @@ class NotificationService
     {
         $this->queue(
             'registration_canceled_admin',
-            'email',
-            config('mail.from.address', 'admin@example.com'),
+            'system',
+            'admin',
             [
                 'registration_id' => $registration->id,
                 'canceled_by' => $registration->canceled_by,

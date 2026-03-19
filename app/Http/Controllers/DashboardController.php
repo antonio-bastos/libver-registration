@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Child;
 use App\Models\Registration;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Support\Collection;
 
 class DashboardController extends Controller
 {
@@ -13,18 +15,32 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
+        // 1. Fetch children and their registrations
         $children = Child::query()
             ->where('user_id', $user->id)
             ->with(['registrations.activity'])
             ->get();
 
-        $registrations = Registration::query()
-            ->whereIn('child_id', $children->pluck('id'))
+        // 2. Fetch self-registrations
+        $selfRegistrations = Registration::query()
+            ->where('user_id', $user->id)
+            ->whereNull('child_id')
             ->where('status', '!=', Registration::STATUS_CANCELED)
             ->with('activity')
             ->get();
 
-        $activityIds = $registrations->pluck('activity_id')->unique()->values();
+        // 3. Common data for status calculation
+        $allActiveRegistrations = Registration::query()
+            ->where(function($q) use ($user, $children) {
+                $q->whereIn('child_id', $children->pluck('id'))
+                  ->orWhere(function($sq) use ($user) {
+                      $sq->where('user_id', $user->id)->whereNull('child_id');
+                  });
+            })
+            ->where('status', '!=', Registration::STATUS_CANCELED)
+            ->get();
+
+        $activityIds = $allActiveRegistrations->pluck('activity_id')->unique()->values();
 
         $confirmedByActivity = Registration::query()
             ->whereIn('activity_id', $activityIds)
@@ -40,10 +56,9 @@ class DashboardController extends Controller
             ->get()
             ->groupBy('activity_id');
 
-        $registrationsByChild = $registrations->groupBy('child_id');
-
-        $childCards = $children->map(function (Child $child) use ($registrationsByChild, $confirmedByActivity, $waitingByActivity) {
-            $items = $registrationsByChild->get($child->id, collect())->map(function (Registration $registration) use ($confirmedByActivity, $waitingByActivity) {
+        // 4. Format registrations
+        $formatRegistrations = function (Collection $regs) use ($confirmedByActivity, $waitingByActivity) {
+            return $regs->map(function (Registration $registration) use ($confirmedByActivity, $waitingByActivity) {
                 $activity = $registration->activity;
                 $capacity = $activity?->capacity;
                 $statusLabel = 'Pending';
@@ -54,12 +69,7 @@ class DashboardController extends Controller
                     $positionIndex = $confirmed->search(fn (Registration $item) => $item->id === $registration->id);
                     $position = $positionIndex === false ? null : $positionIndex + 1;
                     $statusState = 'confirmed';
-
-                    if ($capacity) {
-                        $statusLabel = $position ? $position . '/' . $capacity : 'Confirmed';
-                    } else {
-                        $statusLabel = $position ? (string) $position : 'Confirmed';
-                    }
+                    $statusLabel = $position ? ($capacity ? "$position/$capacity" : (string)$position) : 'Confirmed';
                 } elseif ($registration->status === Registration::STATUS_WAITING || $registration->status === Registration::STATUS_OFFER_SENT) {
                     $waiting = $waitingByActivity->get($registration->activity_id, collect());
                     $positionIndex = $waiting->search(fn (Registration $item) => $item->id === $registration->id);
@@ -75,15 +85,23 @@ class DashboardController extends Controller
                     'status_state' => $statusState,
                 ];
             })->values();
+        };
 
+        $childCards = $children->map(function (Child $child) use ($formatRegistrations) {
             return [
                 'child' => $child,
-                'registrations' => $items,
+                'registrations' => $formatRegistrations($child->registrations->where('status', '!=', Registration::STATUS_CANCELED)),
             ];
-        })->values();
+        });
+
+        $selfCard = [
+            'user' => $user,
+            'registrations' => $formatRegistrations($selfRegistrations),
+        ];
 
         return view('dashboard', [
             'children' => $childCards,
+            'selfCard' => $selfCard,
         ]);
     }
 }

@@ -1,71 +1,95 @@
-@extends('layouts.app')
+@extends('layouts.admin')
+
+@section('title', 'Activity Details')
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold">{{ $activity->title }} - Management</h1>
-        <a href="{{ route('admin.activities.export', $activity) }}" class="bg-green-500 text-white px-4 py-2 rounded">Export CSV</a>
+    <div class="top-bar">
+        <h1>{{ $activity->title }} - Management</h1>
+        <div style="display: flex; gap: 12px;">
+            <a href="{{ route('admin.activities.export', $activity) }}" class="btn btn-outline">
+                <i class="fas fa-file-export"></i> Export CSV
+            </a>
+            <a href="{{ route('admin.activities.index') }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Back to list
+            </a>
+        </div>
     </div>
 
-    <div class="bg-white shadow-md rounded my-6 overflow-x-auto">
-        <table class="min-w-full w-full table-auto">
-            <thead>
-                <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                    <th class="py-3 px-6 text-left">Child</th>
-                    <th class="py-3 px-6 text-left">Parent</th>
-                    <th class="py-3 px-6 text-center">Status</th>
-                    <th class="py-3 px-6 text-center">Paid</th>
-                    <th class="py-3 px-6 text-center">Attended</th>
-                    <th class="py-3 px-6 text-center">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="text-gray-600 text-sm font-light">
-                @foreach($registrations as $reg)
-                <tr class="border-b border-gray-200 hover:bg-gray-100">
-                    <td class="py-3 px-6 text-left whitespace-nowrap">
-                        <span class="font-medium">{{ $reg->child->first_name }} {{ $reg->child->last_name }}</span>
-                    </td>
-                    <td class="py-3 px-6 text-left">
-                        {{ $reg->child->parent->name }}<br>
-                        <span class="text-xs text-gray-500">{{ $reg->child->parent->email }}</span>
-                    </td>
-                    <td class="py-3 px-6 text-center">
-                        <span class="bg-{{ $reg->status === 'confirmed' ? 'green' : ($reg->status === 'waiting' ? 'yellow' : 'red') }}-200 text-{{ $reg->status === 'confirmed' ? 'green' : ($reg->status === 'waiting' ? 'yellow' : 'red') }}-600 py-1 px-3 rounded-full text-xs">
-                            {{ ucfirst($reg->status) }}
-                        </span>
-                        @if($reg->position) <span class="text-xs">#{{ $reg->position }}</span> @endif
-                    </td>
-                    <td class="py-3 px-6 text-center">
-                        {{ number_format($reg->amount_paid, 2) }} / {{ number_format($reg->fee_amount, 2) }}
-                    </td>
-                    <td class="py-3 px-6 text-center">
-                        @if($reg->attended)
-                            <span class="text-green-500">Yes</span>
-                        @else
-                            <span class="text-red-500">No</span>
-                        @endif
-                    </td>
-                    <td class="py-3 px-6 text-center">
-                        <div class="flex item-center justify-center space-x-2">
-                            @if($reg->status === 'waiting' || $reg->status === 'pending_approval')
-                                <form action="{{ route('admin.registrations.promote', $reg) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="text-blue-500 hover:underline">Promote</button>
-                                </form>
+    <div class="card">
+        <h3 style="margin-bottom: 20px;">Registrations</h3>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Child</th>
+                        <th>Parent</th>
+                        <th>Status</th>
+                        <th>Paid</th>
+                        <th>Attended</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($registrations as $reg)
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600;">
+                                @if($reg->child)
+                                    {{ $reg->child->first_name }} {{ $reg->child->last_name }}
+                                @else
+                                    {{ $reg->user->name }} {{ $reg->user->surname }} (Self)
+                                @endif
+                            </div>
+                        </td>
+                        <td>
+                            @if($reg->child)
+                                {{ $reg->child->parent->name }}<br>
+                                <span style="font-size: 12px; color: var(--text-muted);">{{ $reg->child->parent->email }}</span>
+                            @else
+                                {{ $reg->user->name }}<br>
+                                <span style="font-size: 12px; color: var(--text-muted);">{{ $reg->user->email }}</span>
                             @endif
+                        </td>
+                        <td>
+                            <span class="badge {{ $reg->status === 'confirmed' ? 'badge-success' : ($reg->status === 'waiting' ? 'badge-warning' : 'badge-danger') }}">
+                                {{ ucfirst($reg->status) }}
+                            </span>
+                            @if($reg->position) <span style="font-size: 11px;">#{{ $reg->position }}</span> @endif
+                        </td>
+                        <td>
+                            {{ number_format($reg->amount_paid, 2) }} / {{ number_format($reg->fee_amount, 2) }}
+                        </td>
+                        <td>
+                            @if($reg->attended)
+                                <span style="color: var(--success); font-weight: 600;">Yes</span>
+                            @else
+                                <span style="color: var(--danger); font-weight: 600;">No</span>
+                            @endif
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 8px;">
+                                @if($reg->status === 'waiting' || $reg->status === 'pending_approval')
+                                    <form action="{{ route('admin.registrations.promote', $reg) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-primary">Promote</button>
+                                    </form>
+                                @endif
 
-                            @if($reg->status === 'confirmed' && !$reg->attended)
-                                <form action="{{ route('admin.registrations.absent', $reg) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="text-red-500 hover:underline">Mark Absent</button>
-                                </form>
-                            @endif
-                        </div>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+                                @if($reg->status === 'confirmed' && !$reg->attended)
+                                    <form action="{{ route('admin.registrations.absent', $reg) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline" style="color: var(--danger);">Mark Absent</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @if($registrations->isEmpty())
+            <p style="text-align: center; color: var(--text-muted); padding: 40px;">No registrations found for this activity.</p>
+        @endif
     </div>
-</div>
 @endsection
