@@ -20,9 +20,8 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): RedirectResponse
     {
-        $credentials = $request->validated();
-
-        $remember = (bool) $request->input('remember');
+        $credentials = $request->only('email', 'password');
+        $remember = $request->boolean('remember');
 
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
@@ -30,8 +29,10 @@ class AuthController extends Controller
             return redirect()->intended(route('dashboard'));
         }
 
+        // If login fails, we return a generic error. 
+        // For security reasons, it's better not to tell exactly if it's the email or password that is wrong.
         return back()->withErrors([
-            'email' => 'Invalid credentials.',
+            'email' => 'The provided credentials do not match our records.',
         ])->onlyInput('email');
     }
 

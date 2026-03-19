@@ -21,6 +21,7 @@ class AdminActivityController extends Controller
     public function show(Activity $activity)
     {
         $registrations = $activity->registrations()
+            ->where('status', '!=', Registration::STATUS_CANCELED)
             ->with(['child.parent', 'user'])
             ->orderBy('status')
             ->orderBy('position')
@@ -61,13 +62,69 @@ class AdminActivityController extends Controller
         return back()->with('success', 'Registration marked as unpaid.');
     }
 
+    public function markAsAttended(Request $request)
+    {
+        $data = $request->validate([
+            'qr_data' => 'required|string',
+        ]);
+
+        try {
+            $decoded = json_decode($data['qr_data'], true);
+            if (!$decoded || !isset($decoded['p']) || !isset($decoded['s'])) {
+                throw new \Exception('Invalid QR format.');
+            }
+
+            $payload = $decoded['p'];
+            $signature = $decoded['s'];
+
+            // Verify signature
+            $expectedSignature = hash_hmac('sha256', $payload, config('app.key'));
+            if (!hash_equals($expectedSignature, $signature)) {
+                throw new \Exception('Security signature mismatch.');
+            }
+
+            $registrationData = json_decode($payload, true);
+            $registration = Registration::findOrFail($registrationData['id']);
+
+            if ($registration->attended) {
+                return response()->json(['success' => false, 'message' => 'Already marked as attended.']);
+            }
+
+            $registration->attended = true;
+            $registration->attended_at = now();
+            $registration->checked_in_at = now();
+            $registration->save();
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'Attendance confirmed for ' . ($registration->child ? ($registration->child->first_name . ' ' . $registration->child->last_name) : ($registration->user->name . ' ' . $registration->user->surname))
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function absent(Registration $registration)
+    {
+        $registration->attended = false;
+        $registration->attended_at = null;
+        $registration->checked_in_at = null;
+        $registration->save();
+
+        return back()->with('success', 'Participant marked as absent.');
+    }
+
     public function export(Activity $activity)
     {
         $response = new StreamedResponse(function () use ($activity) {
             $handle = fopen('php://output', 'w');
             fputcsv($handle, ['Participant Name', 'Account Holder', 'Email', 'Type', 'Status', 'Paid', 'Attended']);
 
-            $regs = $activity->registrations()->with(['child.parent', 'user'])->get();
+            $regs = $activity->registrations()
+                ->where('status', '!=', Registration::STATUS_CANCELED)
+                ->with(['child.parent', 'user'])
+                ->get();
 
             foreach ($regs as $reg) {
                 $participantName = $reg->child ? ($reg->child->first_name . ' ' . $reg->child->last_name) : ($reg->user->name . ' ' . $reg->user->surname);

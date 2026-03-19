@@ -27,6 +27,7 @@ class HomeController extends Controller
         $sessionsByDate = $allSessions->map(function ($session) {
             return [
                 'id' => $session->id,
+                'activity_id' => $session->activity_id,
                 'date' => $session->start_at->toDateString(),
                 'time' => $session->start_at->format('H:i'),
                 'title' => $session->activity?->title ?? 'Activity',
@@ -58,11 +59,32 @@ class HomeController extends Controller
                 ->count('location'),
         ];
 
+        $userRegistrations = [];
+        if (auth()->check()) {
+            $user = auth()->user();
+            $childIds = $user->children()->pluck('id')->toArray();
+
+            $userRegistrations = \App\Models\Registration::query()
+                ->where('status', '!=', \App\Models\Registration::STATUS_CANCELED)
+                ->where(function ($query) use ($user, $childIds) {
+                    $query->where('user_id', $user->id)
+                          ->orWhereIn('child_id', $childIds);
+                })
+                ->get(['activity_id', 'child_id'])
+                ->groupBy('activity_id')
+                ->map(function ($group) {
+                    return $group->pluck('child_id')->map(function($id) {
+                        return $id === null ? 'self' : (int) $id;
+                    })->all();
+                })->toArray();
+        }
+
         return view('welcome', [
             'actions' => $actions,
             'stats' => $stats,
             'sessionsJson' => $sessionsByDate->toJson(),
             'monthLabel' => $monthStart->format('F Y'),
+            'userRegistrations' => $userRegistrations,
         ]);
     }}
 

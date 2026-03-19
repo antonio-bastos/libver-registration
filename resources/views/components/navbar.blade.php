@@ -59,7 +59,7 @@
         @auth
             @if(auth()->user()->role === 'admin')
                 <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.*') ? 'nav-link-active' : '' }}">
-                    <i class="fas fa-user-shield"></i> Admin Panel
+                    <i class="fas fa-user-shield"></i> Manage
                 </a>
             @endif
             <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'nav-link-active' : '' }}">
@@ -72,11 +72,11 @@
                 </button>
             </form>
         @else
-            <a href="{{ route('login') }}" class="{{ request()->routeIs('login') ? 'nav-link-active' : '' }}">
-                <i class="fas fa-sign-in-alt"></i> Login
-            </a>
             <a href="{{ route('register') }}" class="{{ request()->routeIs('register') ? 'nav-link-active' : '' }}">
                 <i class="fas fa-user-plus"></i> Registration
+            </a>
+            <a href="{{ route('login') }}" class="{{ request()->routeIs('login') ? 'nav-link-active' : '' }}">
+                <i class="fas fa-sign-in-alt"></i> Login
             </a>
         @endauth
     </div>

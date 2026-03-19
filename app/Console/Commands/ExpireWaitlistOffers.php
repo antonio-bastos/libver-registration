@@ -27,9 +27,8 @@ class ExpireWaitlistOffers extends Command
     public function handle(WaitlistService $waitlistService): int
     {
         $count = $waitlistService->expireOffers();
-        
         $this->info("Expired {$count} waitlist offers.");
-        
+
         return Command::SUCCESS;
     }
 }

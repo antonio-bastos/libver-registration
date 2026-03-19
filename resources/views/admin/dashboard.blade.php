@@ -3,11 +3,6 @@
 @section('title', 'Dashboard')
 
 @section('content')
-    <div style="display: flex; justify-content: flex-end; margin-bottom: 24px;">
-        <a href="{{ route('admin.stats') }}" class="btn btn-outline">
-            <i class="fas fa-file-export"></i> Export System Stats (CSV)
-        </a>
-    </div>
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-label">Total Users</div>
@@ -87,5 +82,10 @@
                 <a href="{{ route('admin.activities.index') }}" style="font-size: 13px; font-weight: 600; color: var(--primary);">View all events</a>
             </div>
         </div>
+    </div>
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 24px;">
+        <a href="{{ route('admin.stats') }}" class="btn btn-outline">
+            <i class="fas fa-file-export"></i> Export System Stats (CSV)
+        </a>
     </div>
 @endsection

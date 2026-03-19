@@ -23,7 +23,7 @@
 
         :root {
             --primary: #308bd6;
-            --primary-dark: #1d4ed8;
+            --primary-dark: #1567aa;
             --primary-light: #3b82f6;
             --danger: #ef4444;
             --danger-light: #fee2e2;
@@ -121,7 +121,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 60px 24px;
         }
 
         .form-wrapper {

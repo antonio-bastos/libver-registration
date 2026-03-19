@@ -150,6 +150,12 @@ class RegistrationService
         return $this->db->transaction(function () use ($registrationId, $canceledByUserId) {
             $registration = Registration::query()->whereKey($registrationId)->lockForUpdate()->firstOrFail();
 
+            // Authorization check: Only the owner (parent) or an admin/instructor can cancel
+            $user = \App\Models\User::find($canceledByUserId);
+            if ($registration->user_id !== $canceledByUserId && $user->role === 'parent') {
+                throw new RuntimeException('Unauthorized to cancel this registration.');
+            }
+
             if ($registration->status === Registration::STATUS_CANCELED) {
                 return $registration;
             }

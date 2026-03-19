@@ -28,8 +28,7 @@ class AppServiceProvider extends ServiceProvider
                 ->letters()
                 ->mixedCase()
                 ->numbers()
-                ->symbols()
-                ->uncompromised();
+                ->symbols();
         });
 
         RateLimiter::for('login', function (Request $request) {

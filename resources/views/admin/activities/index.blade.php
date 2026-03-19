@@ -61,7 +61,7 @@
                 </thead>
                 <tbody>
                     @foreach($activities as $activity)
-                    <tr style="{{ $activity->end_at->isPast() ? 'opacity: 0.7; background: #f9fafb;' : '' }}">
+                    <tr style="{{ $activity->end_at->isPast() ? 'opacity: 0.7; background: #ffffff;' : '' }}">
                         <td>
                             <div style="font-weight: 600; font-size: 15px;">{{ $activity->title }}</div>
                             <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">

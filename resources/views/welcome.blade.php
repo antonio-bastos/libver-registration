@@ -11,7 +11,7 @@
     <style>
         :root {
             --primary: #308bd6;
-            --primary-dark: #1d4ed8;
+            --primary-dark: #1567aa;
             --primary-light: #3b82f6;
             --danger: #ef4444;
             --danger-light: #fee2e2;
@@ -31,7 +31,7 @@
             --bg-accent: #e9ecf1;
             --ink: #23272e;
             --muted: #6b7280;
-            --card: #f9fafb;
+            --card: #ffffff;
             --accent: #308bd6;
             --accent-deep: #22304a;
             --pill: #308bd6;
@@ -494,6 +494,9 @@
         <div class="panel" id="actions">
             <div class="panel-header">Events</div>
             @forelse ($actions as $session)
+                @php
+                    $isUserRegistered = auth()->check() && isset($userRegistrations[$session->activity_id]) && !empty($userRegistrations[$session->activity_id]);
+                @endphp
                 <div class="action-item">
                     <div class="action-title" data-modal
                         data-activity-id="{{ $session->activity_id }}"
@@ -503,6 +506,11 @@
                         style="cursor:pointer; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;"
                     >
                         <span>{{ $session->activity?->title ?? 'Activity' }}</span>
+                        @if ($isUserRegistered)
+                            <span style="font-size: 11px; font-weight: 700; color: #ffffff; background: var(--success); padding: 2px 8px; border-radius: 12px; letter-spacing: 0.02em; display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="fas fa-check"></i> Registered
+                            </span>
+                        @endif
                         @if ($session->activity?->age_group)
                             <span style="font-size: 12px; font-weight: 600; color: #475569; background: #e2e8f0; padding: 2px 8px; border-radius: 12px; letter-spacing: 0.02em;">
                                 {{ $session->activity->age_group }}
@@ -537,8 +545,9 @@
                         data-title="{{ $session->activity?->title ?? 'Activity' }}"
                         data-meta="{{ $session->start_at->format('d/m/Y H:i') }}"
                         data-body="{{ strip_tags($session->activity?->description_html ?? '') }}"
+                        @if ($isUserRegistered) style="background: #64748b;" @endif
                     >
-                        Read More
+                        {{ $isUserRegistered ? 'View Status' : 'Read More' }}
                     </button>
                 </div>
             @empty
@@ -657,6 +666,7 @@
 
         <script>
         const sessionsByDate = {!! $sessionsJson !!};
+        const userRegistrations = {!! json_encode($userRegistrations ?? []) !!};
         const categoryFilter = document.getElementById('category-filter');
         const venueFilter = document.getElementById('venue-filter');
         const calendarTitle = document.querySelector('.calendar-title');
@@ -747,8 +757,18 @@
                     sessionsByDate[dateString].forEach(session => {
                         const bubble = document.createElement('div');
                         bubble.className = 'event-indicator';
-                        bubble.textContent = session.title;
+                        
+                        const isRegistered = userRegistrations[session.activity_id] && userRegistrations[session.activity_id].length > 0;
+                        if (isRegistered) {
+                            bubble.style.background = 'var(--success)';
+                            bubble.style.boxShadow = '0 1px 2px rgba(5, 150, 105, 0.2)';
+                            bubble.innerHTML = '<i class="fas fa-check" style="margin-right: 3px;"></i> ' + session.title;
+                        } else {
+                            bubble.textContent = session.title;
+                        }
+
                         bubble.setAttribute('data-modal', '');
+                        bubble.setAttribute('data-activity-id', session.activity_id || '');
                         bubble.setAttribute('data-title', session.title);
                         bubble.setAttribute('data-meta', session.meta);
                         bubble.setAttribute('data-body', session.description);
@@ -789,14 +809,101 @@
         const modalMeta = document.getElementById('modal-meta');
         const modalBody = document.getElementById('modal-body');
         const modalActivityId = document.getElementById('modal-activity-id');
+        const modalRegisterBtn = document.getElementById('modal-register-btn');
 
         function openModal(trigger) {
+            const activityId = trigger.getAttribute('data-activity-id');
             modalTitle.textContent = trigger.getAttribute('data-title') || 'Event';
             modalMeta.textContent = trigger.getAttribute('data-meta') || '';
             modalBody.textContent = trigger.getAttribute('data-body') || '';
             if (modalActivityId) {
-                modalActivityId.value = trigger.getAttribute('data-activity-id') || '';
+                modalActivityId.value = activityId || '';
             }
+
+            // Update registration checkboxes if logged in
+            const registrations = userRegistrations[activityId] || [];
+            let allRegistered = true;
+            let selectableCount = 0;
+
+            // For self
+            const selfCheckbox = document.querySelector('input[name="register_self"]');
+            if (selfCheckbox) {
+                const isRegistered = registrations.includes('self');
+                selfCheckbox.checked = isRegistered;
+                selfCheckbox.disabled = isRegistered;
+                const selfLabel = selfCheckbox.closest('label');
+                const statusSpan = selfLabel.querySelector('.reg-status') || document.createElement('span');
+                
+                if (isRegistered) {
+                    selfLabel.style.opacity = '0.7';
+                    selfLabel.style.background = '#f0fdf4';
+                    selfLabel.style.borderColor = '#bbf7d0';
+                    statusSpan.className = 'reg-status';
+                    statusSpan.style.color = 'var(--success)';
+                    statusSpan.style.fontWeight = '700';
+                    statusSpan.style.marginLeft = '8px';
+                    statusSpan.textContent = '(Registered)';
+                    if (!selfLabel.querySelector('.reg-status')) {
+                        selfLabel.querySelector('span').appendChild(statusSpan);
+                    }
+                } else {
+                    selfLabel.style.opacity = '1';
+                    selfLabel.style.background = '#f8fafc';
+                    selfLabel.style.borderColor = 'var(--border)';
+                    if (selfLabel.querySelector('.reg-status')) {
+                        selfLabel.querySelector('.reg-status').remove();
+                    }
+                    allRegistered = false;
+                    selectableCount++;
+                }
+            }
+
+            // For children
+            const childCheckboxes = document.querySelectorAll('input[name="child_ids[]"]');
+            childCheckboxes.forEach(cb => {
+                const childId = parseInt(cb.value);
+                const isRegistered = registrations.includes(childId);
+                cb.checked = isRegistered;
+                cb.disabled = isRegistered;
+                const childLabel = cb.closest('label');
+                const statusSpan = childLabel.querySelector('.reg-status') || document.createElement('span');
+
+                if (isRegistered) {
+                    childLabel.style.opacity = '0.7';
+                    childLabel.style.background = '#f0fdf4';
+                    childLabel.style.borderColor = '#bbf7d0';
+                    statusSpan.className = 'reg-status';
+                    statusSpan.style.color = 'var(--success)';
+                    statusSpan.style.fontWeight = '700';
+                    statusSpan.style.marginLeft = '8px';
+                    statusSpan.textContent = '(Registered)';
+                    if (!childLabel.querySelector('.reg-status')) {
+                        childLabel.querySelector('span').appendChild(statusSpan);
+                    }
+                } else {
+                    childLabel.style.opacity = '1';
+                    childLabel.style.background = '#ffffff';
+                    childLabel.style.borderColor = 'var(--border)';
+                    if (childLabel.querySelector('.reg-status')) {
+                        childLabel.querySelector('.reg-status').remove();
+                    }
+                    allRegistered = false;
+                    selectableCount++;
+                }
+            });
+
+            if (modalRegisterBtn) {
+                if (selectableCount === 0 && (selfCheckbox || childCheckboxes.length > 0)) {
+                    modalRegisterBtn.textContent = 'Already Registered';
+                    modalRegisterBtn.disabled = true;
+                    modalRegisterBtn.style.background = '#64748b';
+                } else {
+                    modalRegisterBtn.textContent = 'Confirm Registration';
+                    modalRegisterBtn.disabled = selectableCount === 0 && childCheckboxes.length === 0;
+                    modalRegisterBtn.style.background = 'var(--accent)';
+                }
+            }
+
             modal.classList.add('active');
             modal.setAttribute('aria-hidden', 'false');
         }

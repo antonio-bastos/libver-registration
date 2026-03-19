@@ -150,7 +150,7 @@
     .strength-weak { background-color: #ef4444; }
     .strength-fair { background-color: #f59e0b; }
     .strength-good { background-color: #3b82f6; }
-    .strength-strong { background-color: #22c55e; }
+    .strength-strong { background-color: #308bd6; }
     
     button[type="submit"] {
         background-color: #308bd6;
@@ -168,7 +168,7 @@
     }
     
     button[type="submit"]:hover {
-        background-color: #1d4ed8;
+        background-color: #1567aa;
     }
 </style>
 @endpush
@@ -341,7 +341,7 @@
                     id="card_number" 
                     name="card_number" 
                     type="text" 
-                    placeholder="e.g. LIB-2024-XXXX"
+                    placeholder="e.g. XXXXXXXXXXX"
                     class="@error('card_number') error @enderror"
                     value="{{ old('card_number') }}"
                 >
@@ -448,7 +448,7 @@
                 if (score < 2) strengthText.style.color = '#ef4444';
                 else if (score < 4) strengthText.style.color = '#f59e0b';
                 else if (score < 5) strengthText.style.color = '#3b82f6';
-                else strengthText.style.color = '#22c55e';
+                else strengthText.style.color = '#308bd6';
             });
         }
     });

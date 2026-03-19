@@ -8,18 +8,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
         
     <style>
         :root {
             --primary: #308bd6;
-            --primary-dark: #1d4ed8;
+            --primary-dark: #1673be;
             --bg: #f8fafc;
             --white: #ffffff;
             --text-dark: #000000;
             --text-muted: #64748b;
             --border: #e2e8f0;
             --danger: #ef4444;
-            --success: #22c55e;
+            --success: #308bd6;
             --warning: #f59e0b;
         }
 
@@ -134,6 +135,8 @@
         .btn-outline:hover { background: var(--bg); }
         .btn-danger { color: var(--danger); background: #fef2f2; }
         .btn-danger:hover { background: #fee2e2; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { opacity: 0.9; }
 
         .registration-item {
             display: flex;
@@ -154,6 +157,8 @@
             padding: 4px 10px;
             border-radius: 999px;
             text-transform: capitalize;
+            display: inline-block;
+            margin-top: 4px;
         }
 
         .status-confirmed { background: #dcfce7; color: #166534; }
@@ -174,28 +179,48 @@
         .modal {
             position: fixed;
             inset: 0;
-            background: rgba(17, 24, 39, 0.55);
+            background: rgba(17, 24, 39, 0.7);
             display: none;
             align-items: center;
             justify-content: center;
             padding: 20px;
-            z-index: 1000;
+            z-index: 2000;
+            backdrop-filter: blur(4px);
         }
         .modal.active { display: flex; }
         .modal-card {
             background: white;
             width: 100%;
-            max-width: 480px;
-            border-radius: 16px;
-            padding: 32px;
+            max-width: 440px;
+            border-radius: 20px;
+            padding: 40px;
             position: relative;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         }
         .modal-close {
             position: absolute;
-            top: 16px;
-            right: 16px;
+            top: 20px;
+            right: 20px;
             cursor: pointer;
             color: var(--text-muted);
+            font-size: 20px;
+            transition: color 0.2s;
+        }
+        .modal-close:hover { color: var(--text-dark); }
+
+        #qrcode-container {
+            display: flex;
+            justify-content: center;
+            margin: 24px 0;
+            padding: 16px;
+            background: #fff;
+            border-radius: 12px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
         }
         </style>
 
@@ -220,6 +245,10 @@
                         <div class="form-group">
                             <label>Email Address</label>
                             <input type="email" value="{{ auth()->user()->email }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Card Number</label>
+                            <input type="text" value="{{ auth()->user()->card_number }}" readonly>
                         </div>
                     </form>
                 </div>
@@ -273,6 +302,21 @@
                                 </span>
                             </div>
                             <div class="actions">
+                                @if($item['status_state'] === 'confirmed' && !$item['registration']->attended)
+                                    @php
+                                        $payload = json_encode([
+                                            'id' => $item['registration']->id,
+                                            'user' => auth()->user()->name . ' ' . auth()->user()->surname,
+                                            'event' => $item['activity']?->title,
+                                            'ts' => time()
+                                        ]);
+                                        $signature = hash_hmac('sha256', $payload, config('app.key'));
+                                        $qrData = json_encode(['p' => $payload, 's' => $signature]);
+                                    @endphp
+                                    <button onclick="showQRCode('{{ addslashes($qrData) }}', '{{ addslashes($item['activity']?->title) }}')" class="btn btn-success">
+                                        <i class="fas fa-qrcode"></i> Check-in QR
+                                    </button>
+                                @endif
                                 <form action="{{ route('registrations.cancel', $item['registration']->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this registration?')">
                                     @csrf
                                     <button type="submit" class="btn btn-danger">Cancel</button>
@@ -302,6 +346,21 @@
                                     </span>
                                 </div>
                                 <div class="actions">
+                                    @if($item['status_state'] === 'confirmed' && !$item['registration']->attended)
+                                        @php
+                                            $payload = json_encode([
+                                                'id' => $item['registration']->id,
+                                                'user' => $card['child']->first_name . ' ' . $card['child']->last_name,
+                                                'event' => $item['activity']?->title,
+                                                'ts' => time()
+                                            ]);
+                                            $signature = hash_hmac('sha256', $payload, config('app.key'));
+                                            $qrData = json_encode(['p' => $payload, 's' => $signature]);
+                                        @endphp
+                                        <button onclick="showQRCode('{{ addslashes($qrData) }}', '{{ addslashes($item['activity']?->title) }}')" class="btn btn-success">
+                                            <i class="fas fa-qrcode"></i> Check-in QR
+                                        </button>
+                                    @endif
                                     <form action="{{ route('registrations.cancel', $item['registration']->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this registration?')">
                                         @csrf
                                         <button type="submit" class="btn btn-danger">Cancel</button>
@@ -320,6 +379,18 @@
                     <a href="{{ url('/') }}" class="btn btn-primary" style="margin-top: 16px;">Browse Events</a>
                 </div>
             @endif
+        </div>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div class="modal" id="qr-modal">
+        <div class="modal-card">
+            <i class="fas fa-times modal-close" onclick="closeQRModal()"></i>
+            <h3 id="qr-event-title" style="margin-bottom: 8px; font-size: 20px;">Event Check-in</h3>
+            <p style="color: var(--text-muted); font-size: 14px;">Show this QR code to the event staff</p>
+            <div id="qrcode-container">
+                <div id="qrcode"></div>
+            </div>
         </div>
     </div>
 
@@ -346,5 +417,41 @@
             </form>
         </div>
     </div>
+
+    <script>
+        let qrCodeInstance = null;
+
+        function showQRCode(data, title) {
+            const container = document.getElementById('qrcode');
+            container.innerHTML = '';
+            
+            document.getElementById('qr-event-title').textContent = title;
+            document.getElementById('qr-modal').classList.add('active');
+
+            qrCodeInstance = new QRCode(container, {
+                text: data,
+                width: 200,
+                height: 200,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }
+
+        function closeQRModal() {
+            document.getElementById('qr-modal').classList.remove('active');
+            if (qrCodeInstance) {
+                qrCodeInstance.clear();
+            }
+        }
+
+        // Close on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeQRModal();
+                document.getElementById('child-modal').classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>

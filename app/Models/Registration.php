@@ -36,15 +36,20 @@ class Registration extends Model
         'checked_in_at',
         'check_in_token',
         'attended',
+        'attended_at',
     ];
 
     protected $casts = [
+        'activity_id' => 'integer',
+        'user_id' => 'integer',
+        'child_id' => 'integer',
         'position' => 'integer',
         'fee_amount' => 'decimal:2',
         'amount_paid' => 'decimal:2',
         'payment_metadata' => 'array',
         'canceled_at' => 'datetime',
         'checked_in_at' => 'datetime',
+        'attended_at' => 'datetime',
         'attended' => 'boolean',
         'consent_media' => 'boolean',
     ];

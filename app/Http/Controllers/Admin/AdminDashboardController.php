@@ -49,7 +49,7 @@ class AdminDashboardController extends Controller
     public function showUser(User $user)
     {
         $user->load([
-            'children.registrations.activity', 
+            'children.registrations' => fn($q) => $q->with('activity'), 
             'registrations' => fn($q) => $q->whereNull('child_id')->with('activity')
         ]);
         return view('admin.users.show', compact('user'));
@@ -64,6 +64,33 @@ class AdminDashboardController extends Controller
         $user->update(['role' => $data['role']]);
 
         return back()->with('success', "User role updated to {$data['role']}.");
+    }
+
+    public function updateUser(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'surname' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'phone' => ['nullable', 'string', 'max:255'],
+            'card_number' => ['nullable', 'string', 'max:255'],
+            'dob' => ['nullable', 'date'],
+        ]);
+
+        $user->update($data);
+
+        return back()->with('success', "User account settings updated successfully.");
+    }
+
+    public function updateRegistrationStatus(Request $request, Registration $registration)
+    {
+        $data = $request->validate([
+            'status' => ['required', 'string', 'in:confirmed,waiting,offer_sent,canceled,pending_approval'],
+        ]);
+
+        $registration->update(['status' => $data['status']]);
+
+        return back()->with('success', "Registration status updated.");
     }
 
     public function activities(Request $request)
@@ -94,7 +121,9 @@ class AdminDashboardController extends Controller
             }
         }
 
-        $activities = $query->withCount('registrations')->latest()->paginate(15);
+        $activities = $query->withCount(['registrations' => function($q) {
+            $q->where('status', '!=', Registration::STATUS_CANCELED);
+        }])->latest()->paginate(15);
         $categories = $this->getCategories();
         $venues = $this->getVenues();
 
@@ -229,16 +258,17 @@ class AdminDashboardController extends Controller
             fputcsv($handle, ['Metric', 'Value']);
             fputcsv($handle, ['Total Users', User::count()]);
             fputcsv($handle, ['Total Activities', Activity::count()]);
-            fputcsv($handle, ['Total Registrations', Registration::count()]);
-            fputcsv($handle, ['Confirmed Registrations', Registration::where('status', 'confirmed')->count()]);
-            fputcsv($handle, ['Waitlisted Registrations', Registration::where('status', 'waiting')->count()]);
-            
+            fputcsv($handle, ['Total Registrations (Excl. Canceled)', Registration::where('status', '!=', Registration::STATUS_CANCELED)->count()]);
+            fputcsv($handle, ['Confirmed Registrations', Registration::where('status', Registration::STATUS_CONFIRMED)->count()]);
+            fputcsv($handle, ['Waitlisted Registrations', Registration::where('status', Registration::STATUS_WAITING)->count()]);
+
             fputcsv($handle, []);
-            fputcsv($handle, ['Category', 'Activity Count', 'Registration Count']);
-            
+            fputcsv($handle, ['Category', 'Activity Count', 'Registration Count (Excl. Canceled)']);
+
             $categories = Activity::groupBy('type')->select('type', DB::raw('count(*) as total'))->get();
             foreach ($categories as $cat) {
-                $regCount = Registration::whereHas('activity', fn($q) => $q->where('type', $cat->type))->count();
+                $regCount = Registration::where('status', '!=', Registration::STATUS_CANCELED)
+                    ->whereHas('activity', fn($q) => $q->where('type', $cat->type))->count();
                 fputcsv($handle, [$cat->type, $cat->total, $regCount]);
             }
 

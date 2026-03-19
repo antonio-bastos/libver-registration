@@ -46,4 +46,11 @@ class AttendanceController extends Controller
 
         return back()->with('success', 'Marked as absent. Penalty rules applied if applicable.');
     }
+
+    public function unmarkAttendance(Request $request, Registration $registration)
+    {
+        $this->attendanceService->unmarkAttendance($registration);
+
+        return back()->with('success', 'Attendance record cleared.');
+    }
 }

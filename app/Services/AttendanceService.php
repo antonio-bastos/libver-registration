@@ -36,6 +36,7 @@ class AttendanceService
         }
 
         $registration->checked_in_at = now();
+        $registration->attended_at = now();
         $registration->attended = true;
         
         $registration->save();
@@ -54,6 +55,7 @@ class AttendanceService
         }
 
         $registration->attended = false; 
+        $registration->attended_at = null;
         $registration->save();
 
         // Financial Penalty Logic
@@ -85,5 +87,22 @@ class AttendanceService
                  $child->save();
             }
         }
+    }
+
+    /**
+     * Resets attendance status to null (neither attended nor absent).
+     */
+    public function unmarkAttendance(Registration $registration): void
+    {
+        $registration->attended = null;
+        $registration->attended_at = null;
+        $registration->checked_in_at = null;
+        
+        // Remove fine if it exists in metadata
+        $metadata = $registration->payment_metadata ?? [];
+        unset($metadata['absence_fine'], $metadata['fined_at']);
+        $registration->payment_metadata = $metadata;
+
+        $registration->save();
     }
 }

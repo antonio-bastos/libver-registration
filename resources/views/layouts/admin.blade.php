@@ -11,14 +11,14 @@
     <style>
         :root {
             --primary: #308bd6;
-            --primary-dark: #1d4ed8;
+            --primary-dark: #1567aa;
             --bg: #f8fafc;
             --white: #ffffff;
             --text-dark: #000000;
             --text-muted: #64748b;
             --border: #e2e8f0;
             --danger: #ef4444;
-            --success: #22c55e;
+            --success: #308bd6;
             --warning: #f59e0b;
             --accent: #308bd6;
             --accent-deep: #22304a;
@@ -154,7 +154,7 @@
         }
 
         .badge-success { background: #dcfce7; color: #166534; }
-        .badge-warning { background: #fef9c3; color: #854d0e; }
+        .badge-warning { background: #fee2e2; color: #991b1b; }
         .badge-danger { background: #fee2e2; color: #991b1b; }
         .badge-info { background: #e0f2fe; color: #075985; }
 
@@ -187,7 +187,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 32px;
         }
     </style>
 </head>
@@ -204,9 +203,11 @@
             <a href="{{ route('admin.activities.index') }}" class="admin-nav-link {{ request()->routeIs('admin.activities.*') ? 'active' : '' }}">
                 <i class="fas fa-calendar-alt"></i> Events
             </a>
+            @if(auth()->user()->role === 'admin')
             <a href="{{ route('admin.users.index') }}" class="admin-nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                 <i class="fas fa-users"></i> Users
             </a>
+            @endif
         </div>
     </div>
 
