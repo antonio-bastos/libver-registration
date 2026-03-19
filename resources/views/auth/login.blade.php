@@ -50,10 +50,10 @@
                 <input id="remember" type="checkbox" name="remember" value="1">
                 <label for="remember">Stay Connected</label>
             </div>
-            <!-- Disabled for now as backend logic isn't implemented -->
-            <!-- <a class="forgot-link" href="#">
+            
+            <a class="forgot-link" href="{{ route('password.request') }}">
                 <i class="fas fa-question-circle"></i> Forgot Password?
-            </a> -->
+            </a>
         </div>
 
         <div class="form-actions">

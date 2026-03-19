@@ -15,6 +15,12 @@
             box-sizing: border-box;
         }
 
+        /* Hide default browser reveal button */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
+
         :root {
             --primary: #308bd6;
             --primary-dark: #1d4ed8;
