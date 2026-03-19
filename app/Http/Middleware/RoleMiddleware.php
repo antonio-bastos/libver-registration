@@ -12,7 +12,7 @@ class RoleMiddleware
     {
         $user = $request->user();
 
-        if (!$user || ($roles && !in_array($user->role, $roles, true))) {
+        if (!$user || ($roles && !in_array($user->role, $roles, true) && $user->role !== 'admin')) {
             abort(403, 'Unauthorized.');
         }
 

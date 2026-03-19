@@ -98,6 +98,12 @@
                                 <a href="{{ route('admin.activities.edit', $activity) }}" class="btn btn-sm btn-outline" title="Edit Event">
                                     <i class="fas fa-edit"></i>
                                 </a>
+                                <form action="{{ route('admin.activities.duplicate', $activity) }}" method="POST" style="display: inline;">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline" title="Duplicate Event">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </form>
                                 <form action="{{ route('admin.activities.destroy', $activity) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this event? All sessions and registrations will be removed.')" style="display: inline;">
                                     @csrf
                                     @method('DELETE')

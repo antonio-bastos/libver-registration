@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Activity;
 use App\Models\User;
+use App\Models\Registration;
+use App\Models\ActivitySession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminDashboardController extends Controller
 {
@@ -33,8 +36,8 @@ class AdminDashboardController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%$search%")
-                  ->orWhere('surname', 'like', "%$search%")
-                  ->orWhere('email', 'like', "%$search%");
+                ->orWhere('surname', 'like', "%$search%")
+                ->orWhere('email', 'like', "%$search%");
             });
         }
 
@@ -119,20 +122,27 @@ class AdminDashboardController extends Controller
             'title' => 'required|string|max:255',
             'description_html' => 'required|string',
             'type' => 'required|string',
+            'activity_subtype' => 'nullable|string',
             'age_group' => 'required|string',
             'capacity' => 'required|integer|min:1',
+            'seating_capacity' => 'nullable|integer|min:1',
+            'numbered_seating' => 'boolean',
             'fee' => 'required|numeric|min:0',
             'start_at' => 'required|date',
             'end_at' => 'required|date|after:start_at',
             'reg_start_at' => 'nullable|date|before:start_at',
+            'start_time_label' => 'nullable|string|max:255',
             'location' => 'required|string',
+            'live_stream_url' => 'nullable|url',
             'is_active' => 'boolean',
             'waitlist_enabled' => 'boolean',
+            'requires_selection' => 'boolean',
         ]);
 
-        $data['description_html'] = strip_tags($data['description_html']);
         $data['is_active'] = $request->has('is_active');
         $data['waitlist_enabled'] = $request->has('waitlist_enabled');
+        $data['numbered_seating'] = $request->has('numbered_seating');
+        $data['requires_selection'] = $request->has('requires_selection');
         $data['is_paid'] = $data['fee'] > 0;
 
         $activity = Activity::create($data);
@@ -161,20 +171,27 @@ class AdminDashboardController extends Controller
             'title' => 'required|string|max:255',
             'description_html' => 'required|string',
             'type' => 'required|string',
+            'activity_subtype' => 'nullable|string',
             'age_group' => 'required|string',
             'capacity' => 'required|integer|min:1',
+            'seating_capacity' => 'nullable|integer|min:1',
+            'numbered_seating' => 'boolean',
             'fee' => 'required|numeric|min:0',
             'start_at' => 'required|date',
             'end_at' => 'required|date|after:start_at',
             'reg_start_at' => 'nullable|date|before:start_at',
+            'start_time_label' => 'nullable|string|max:255',
             'location' => 'required|string',
+            'live_stream_url' => 'nullable|url',
             'is_active' => 'boolean',
             'waitlist_enabled' => 'boolean',
+            'requires_selection' => 'boolean',
         ]);
 
-        $data['description_html'] = strip_tags($data['description_html']);
         $data['is_active'] = $request->has('is_active');
         $data['waitlist_enabled'] = $request->has('waitlist_enabled');
+        $data['numbered_seating'] = $request->has('numbered_seating');
+        $data['requires_selection'] = $request->has('requires_selection');
         $data['is_paid'] = $data['fee'] > 0;
 
         $activity->update($data);
@@ -187,6 +204,51 @@ class AdminDashboardController extends Controller
         ]);
 
         return redirect()->route('admin.activities.index')->with('success', 'Activity and its sessions updated successfully.');
+    }
+
+    public function duplicate(Activity $activity)
+    {
+        $newActivity = $activity->replicate();
+        $newActivity->title = "[CLONE] " . $activity->title;
+        $newActivity->is_active = false;
+        $newActivity->save();
+
+        foreach ($activity->sessions as $session) {
+            $newSession = $session->replicate();
+            $newSession->activity_id = $newActivity->id;
+            $newSession->save();
+        }
+
+        return redirect()->route('admin.activities.edit', $newActivity)->with('success', 'Activity duplicated. Please update dates.');
+    }
+
+    public function stats()
+    {
+        $response = new StreamedResponse(function () {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Metric', 'Value']);
+            fputcsv($handle, ['Total Users', User::count()]);
+            fputcsv($handle, ['Total Activities', Activity::count()]);
+            fputcsv($handle, ['Total Registrations', Registration::count()]);
+            fputcsv($handle, ['Confirmed Registrations', Registration::where('status', 'confirmed')->count()]);
+            fputcsv($handle, ['Waitlisted Registrations', Registration::where('status', 'waiting')->count()]);
+            
+            fputcsv($handle, []);
+            fputcsv($handle, ['Category', 'Activity Count', 'Registration Count']);
+            
+            $categories = Activity::groupBy('type')->select('type', DB::raw('count(*) as total'))->get();
+            foreach ($categories as $cat) {
+                $regCount = Registration::whereHas('activity', fn($q) => $q->where('type', $cat->type))->count();
+                fputcsv($handle, [$cat->type, $cat->total, $regCount]);
+            }
+
+            fclose($handle);
+        });
+
+        $response->headers->set('Content-Type', 'text/csv');
+        $response->headers->set('Content-Disposition', 'attachment; filename="system-stats.csv"');
+
+        return $response;
     }
 
     private function getCategories()
@@ -203,7 +265,9 @@ class AdminDashboardController extends Controller
             'Speech - Lecture',
             'Movie Screening',
             'Seminars - Workshops',
-            'Courses'
+            'Courses',
+            'Mobile library routes',
+            'School visits'
         ];
     }
 

@@ -16,9 +16,6 @@ class AttendanceController extends Controller
         $this->attendanceService = $attendanceService;
     }
 
-    /**
-     * Scanned via QR Code by Staff.
-     */
     public function scan(Request $request, string $token)
     {
         try {
@@ -43,9 +40,6 @@ class AttendanceController extends Controller
         }
     }
 
-    /**
-     * Manually mark as absent (No Show).
-     */
     public function markAbsent(Request $request, Registration $registration)
     {
         $this->attendanceService->markAbsent($registration);

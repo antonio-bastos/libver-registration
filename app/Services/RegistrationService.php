@@ -107,7 +107,8 @@ class RegistrationService
 
         $status = Registration::STATUS_CONFIRMED;
         $position = null;
-        
+        $seatNumber = null;
+
         if ($activity->requires_selection) {
             $status = Registration::STATUS_PENDING_APPROVAL;
         } elseif ($activity->capacity !== null && $confirmedCount >= $activity->capacity) {
@@ -124,7 +125,15 @@ class RegistrationService
             $position = ($maxPosition ?? 0) + 1;
         }
 
-        $feeAmount = $this->paymentService->calculateTotal($activity);
+        // Handle numbered seating
+        if ($status === Registration::STATUS_CONFIRMED && $activity->numbered_seating) {
+            $lastSeat = Registration::where('activity_id', $activity->id)
+                ->whereNotNull('seat_number')
+                ->max('seat_number');
+            $seatNumber = ($lastSeat ?? 0) + 1;
+        }
+
+        $feeAmount = (float) ($activity->fee ?? 0);
         $paymentStatus = ($feeAmount > 0) ? Registration::PAYMENT_STATUS_UNPAID : Registration::PAYMENT_STATUS_PAID;
 
         $registration = Registration::query()->create([
@@ -133,6 +142,7 @@ class RegistrationService
             'child_id' => $child?->id,
             'status' => $status,
             'position' => $position,
+            'seat_number' => $seatNumber,
             'fee_amount' => $feeAmount,
             'amount_paid' => 0,
             'payment_status' => $paymentStatus,

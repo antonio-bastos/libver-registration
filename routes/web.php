@@ -64,6 +64,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/activities/{activity}/edit', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'editActivity'])->name('admin.activities.edit');
     Route::put('/activities/{activity}', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'updateActivity'])->name('admin.activities.update');
     Route::delete('/activities/{activity}', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'destroyActivity'])->name('admin.activities.destroy');
+    Route::post('/activities/{activity}/duplicate', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'duplicate'])->name('admin.activities.duplicate');
+    Route::get('/stats', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'stats'])->name('admin.stats');
 
     Route::post('/users/admin', [AdminUsersController::class, 'store'])->name('admin.users.store');
 
