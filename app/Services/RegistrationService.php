@@ -130,7 +130,7 @@ class RegistrationService
         $paymentStatus = ($feeAmount > 0) ? Registration::PAYMENT_STATUS_UNPAID : Registration::PAYMENT_STATUS_PAID;
 
         $registration = Registration::query()->create([
-            'activity_id' => $activityId,
+            'activity_id' => $activity->id,
             'user_id' => $userId,
             'child_id' => $child?->id,
             'status' => $status,

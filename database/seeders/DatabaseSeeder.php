@@ -1,3 +1,21 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Activity;
+use App\Models\ActivitySession;
+use App\Models\Child;
+use App\Models\Registration;
+use App\Models\User;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+
+class DatabaseSeeder extends Seeder
+{
+    /**
+     * Seed the application's database.
+     */
+    public function run(): void
     {
         $admin = User::query()->create([
             'name' => 'Admin',
@@ -122,4 +140,5 @@
             'status' => Registration::STATUS_WAITING,
             'position' => 1,
         ]);
-
+    }
+}

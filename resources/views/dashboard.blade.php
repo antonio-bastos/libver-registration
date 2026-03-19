@@ -221,7 +221,6 @@
                             <label>Email Address</label>
                             <input type="email" value="{{ auth()->user()->email }}" readonly>
                         </div>
-                        <p style="font-size: 12px; color: var(--text-muted);">Profile editing is handled by library staff.</p>
                     </form>
                 </div>
             </div>
