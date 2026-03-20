@@ -13,7 +13,9 @@ class ActivityFeedController extends Controller
     public function __invoke(Request $request)
     {
         $token = config('libver.public_api_token');
-        if ($token && $request->query('token') !== $token) {
+        $providedToken = $request->bearerToken();
+
+        if ($token && (!is_string($providedToken) || !hash_equals($token, $providedToken))) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 

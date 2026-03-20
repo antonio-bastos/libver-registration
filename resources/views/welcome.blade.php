@@ -665,8 +665,8 @@
     </div>
 
         <script>
-        const sessionsByDate = {!! $sessionsJson !!};
-        const userRegistrations = {!! json_encode($userRegistrations ?? []) !!};
+        const sessionsByDate = @json(json_decode($sessionsJson));
+        const userRegistrations = @json($userRegistrations ?? []);
         const categoryFilter = document.getElementById('category-filter');
         const venueFilter = document.getElementById('venue-filter');
         const calendarTitle = document.querySelector('.calendar-title');

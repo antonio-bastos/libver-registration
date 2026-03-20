@@ -265,11 +265,16 @@ class AdminDashboardController extends Controller
             fputcsv($handle, []);
             fputcsv($handle, ['Category', 'Activity Count', 'Registration Count (Excl. Canceled)']);
 
+            $sanitize = function ($field) {
+                $field = (string) $field;
+                return preg_match('/^[=\-+@]/', $field) ? "\'" . $field : $field;
+            };
+
             $categories = Activity::groupBy('type')->select('type', DB::raw('count(*) as total'))->get();
             foreach ($categories as $cat) {
                 $regCount = Registration::where('status', '!=', Registration::STATUS_CANCELED)
                     ->whereHas('activity', fn($q) => $q->where('type', $cat->type))->count();
-                fputcsv($handle, [$cat->type, $cat->total, $regCount]);
+                fputcsv($handle, [$sanitize($cat->type), $cat->total, $regCount]);
             }
 
             fclose($handle);

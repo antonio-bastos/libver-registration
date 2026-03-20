@@ -16,7 +16,7 @@ class FileService
             'owner_type' => $ownerType,
             'owner_id' => $ownerId,
             'storage_path' => $path,
-            'mime' => $file->getClientMimeType(),
+            'mime' => $file->getMimeType(),
             'size' => $file->getSize(),
             'type' => 'image',
         ]);

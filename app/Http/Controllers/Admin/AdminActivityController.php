@@ -121,6 +121,11 @@ class AdminActivityController extends Controller
             $handle = fopen('php://output', 'w');
             fputcsv($handle, ['Participant Name', 'Account Holder', 'Email', 'Type', 'Status', 'Paid', 'Attended']);
 
+            $sanitize = function ($field) {
+                $field = (string) $field;
+                return preg_match('/^[=\-+@]/', $field) ? "\'" . $field : $field;
+            };
+
             $regs = $activity->registrations()
                 ->where('status', '!=', Registration::STATUS_CANCELED)
                 ->with(['child.parent', 'user'])
@@ -133,9 +138,9 @@ class AdminActivityController extends Controller
                 $type = $reg->child ? 'Child' : 'Self';
 
                 fputcsv($handle, [
-                    $participantName,
-                    $accountHolder,
-                    $email,
+                    $sanitize($participantName),
+                    $sanitize($accountHolder),
+                    $sanitize($email),
                     $type,
                     $reg->status,
                     $reg->amount_paid,
