@@ -58,11 +58,8 @@ class AttendanceService
         $registration->attended_at = null;
         $registration->save();
 
-        // Financial Penalty Logic
         $fineAmount = (float) config('libver.unreported_absence_fine', 5.00);
         if ($fineAmount > 0) {
-            // In a real system, this would integrate with a 'fines' table or external billing.
-            // For now, we'll mark it on the registration metadata or a dedicated column if it existed.
             $metadata = $registration->payment_metadata ?? [];
             $metadata['absence_fine'] = $fineAmount;
             $metadata['fined_at'] = now()->toDateTimeString();
@@ -70,7 +67,6 @@ class AttendanceService
             $registration->save();
         }
                
-        // Restriction Logic (currently only for children)
         if ($registration->child) {
             $child = $registration->child;
             $child->increment('absence_count');
@@ -82,7 +78,6 @@ class AttendanceService
                  $days = (int) config('libver.restriction_duration_days', 30);
                  $child->restrictions_until = Carbon::now()->addDays($days);
                  
-                 // Reset count after applying penalty
                  $child->absence_count = 0;
                  $child->save();
             }
@@ -98,7 +93,6 @@ class AttendanceService
         $registration->attended_at = null;
         $registration->checked_in_at = null;
         
-        // Remove fine if it exists in metadata
         $metadata = $registration->payment_metadata ?? [];
         unset($metadata['absence_fine'], $metadata['fined_at']);
         $registration->payment_metadata = $metadata;

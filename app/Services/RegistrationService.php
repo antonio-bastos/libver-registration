@@ -53,12 +53,10 @@ class RegistrationService
             throw new RuntimeException('Registration is not yet open.');
         }
 
-        // 1. Blacklist Check
         if ($child && $child->isRestricted()) {
              throw new RuntimeException('Registration denied: Child is currently under restriction until ' . $child->restrictions_until->format('d/m/Y'));
         }
 
-        // 2. First Timers Only Check
         if ($activity->first_timers_only) {
             $query = Registration::query()->whereIn('status', [Registration::STATUS_CONFIRMED, Registration::STATUS_CANCELED]);
             if ($child) {
@@ -72,7 +70,6 @@ class RegistrationService
             }
         }
 
-        // 3. Existing Registration Check
         $existingQuery = Registration::query()
             ->where('activity_id', $activity->id)
             ->where('status', '!=', Registration::STATUS_CANCELED);
@@ -87,12 +84,10 @@ class RegistrationService
             throw new RuntimeException($child ? 'Child already registered.' : 'You are already registered.');
         }
 
-        // 4. Smart Conflict Check (only for children for now, as user schedule isn't tracked the same way)
         if ($child) {
             $this->conflictService->assertNoConflict($child->id, $activity->id);
         }
 
-        // Determine Status
         $confirmedCount = Registration::query()
             ->where('activity_id', $activity->id)
             ->where('status', Registration::STATUS_CONFIRMED)
@@ -119,7 +114,6 @@ class RegistrationService
             $position = ($maxPosition ?? 0) + 1;
         }
 
-        // Handle numbered seating
         if ($status === Registration::STATUS_CONFIRMED && $activity->numbered_seating) {
             $lastSeat = Registration::where('activity_id', $activity->id)
                 ->whereNotNull('seat_number')
@@ -150,7 +144,6 @@ class RegistrationService
         return $this->db->transaction(function () use ($registrationId, $canceledByUserId) {
             $registration = Registration::query()->whereKey($registrationId)->lockForUpdate()->firstOrFail();
 
-            // Authorization check: Only the owner (parent) or an admin/instructor can cancel
             $user = \App\Models\User::find($canceledByUserId);
             if ($registration->user_id !== $canceledByUserId && $user->role === 'parent') {
                 throw new RuntimeException('Unauthorized to cancel this registration.');

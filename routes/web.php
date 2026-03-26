@@ -20,7 +20,6 @@ Route::middleware('guest')->group(function () {
     Route::get('/registration', [AuthController::class, 'showRegistrationForm'])->name('register');
     Route::post('/registration', [AuthController::class, 'register'])->middleware('throttle:10,1')->name('register.submit');
 
-    // Password Reset Routes
     Route::get('/forgot-password', [\App\Http\Controllers\PasswordResetController::class, 'showLinkRequestForm'])->name('password.request');
     Route::post('/forgot-password', [\App\Http\Controllers\PasswordResetController::class, 'sendResetLinkEmail'])->middleware('throttle:6,1')->name('password.email');
     Route::get('/reset-password/{token}', [\App\Http\Controllers\PasswordResetController::class, 'showResetForm'])->name('password.reset');
@@ -40,7 +39,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/media/upload', [MediaController::class, 'upload'])->middleware('role:admin,instructor')->name('media.upload');
 
-    // Children Management
     Route::post('/children', [ChildController::class, 'store'])->name('children.store');
     Route::delete('/children/{child}', [ChildController::class, 'destroy'])->name('children.destroy');
 });
@@ -48,7 +46,6 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'role:admin,instructor'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
-    // User Management (Admin Only)
     Route::middleware('role:admin')->group(function () {
         Route::get('/users', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'users'])->name('admin.users.index');
         Route::get('/users/{user}', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'showUser'])->name('admin.users.show');
@@ -59,7 +56,6 @@ Route::middleware(['auth', 'role:admin,instructor'])->prefix('admin')->group(fun
         Route::post('/users/admin', [AdminUsersController::class, 'store'])->name('admin.users.store');
     });
 
-    // Activity Management (Admin & Instructor)
     Route::get('/activities', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'activities'])->name('admin.activities.index');
     Route::get('/activities/create', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'createActivity'])->name('admin.activities.create');
     Route::post('/activities', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'storeActivity'])->name('admin.activities.store');
@@ -68,12 +64,10 @@ Route::middleware(['auth', 'role:admin,instructor'])->prefix('admin')->group(fun
     Route::delete('/activities/{activity}', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'destroyActivity'])->name('admin.activities.destroy');
     Route::post('/activities/{activity}/duplicate', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'duplicate'])->name('admin.activities.duplicate');
 
-    // Attendance
     Route::get('/check-in/{token}', [AttendanceController::class, 'scan'])->name('admin.checkin.scan');
     Route::post('/registrations/{registration}/absent', [AttendanceController::class, 'markAbsent'])->name('admin.registrations.absent');
     Route::post('/registrations/{registration}/unmark-attendance', [AttendanceController::class, 'unmarkAttendance'])->name('admin.registrations.unmark_attendance');
 
-    // Activity Details & Specialized actions
     Route::get('/activities/{activity}/show', [AdminActivityController::class, 'show'])->name('admin.activities.show_details');
     Route::get('/activities/{activity}/export', [AdminActivityController::class, 'export'])->name('admin.activities.export');
     Route::post('/registrations/{registration}/promote', [AdminActivityController::class, 'promote'])->name('admin.registrations.promote');

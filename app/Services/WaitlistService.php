@@ -24,13 +24,11 @@ class WaitlistService
         return $this->db->transaction(function () use ($activityId) {
             $activity = Activity::query()->whereKey($activityId)->lockForUpdate()->firstOrFail();
 
-            // Check effective capacity: Confirmed + Active Offers
             $occupiedCount = Registration::query()
                 ->where('activity_id', $activity->id)
                 ->whereIn('status', [Registration::STATUS_CONFIRMED, Registration::STATUS_OFFER_SENT])
                 ->lockForUpdate()
                 ->count();
-            // If activity requires selection, do not auto-promote
             if ($activity->requires_selection) {
                 return null;
             }
@@ -49,7 +47,6 @@ class WaitlistService
                 return null;
             }
 
-            // Invalidate any previous offers for this registration just in case
             WaitlistOffer::where('registration_id', $nextRegistration->id)->delete();
 
             $offer = WaitlistOffer::query()->create([
@@ -82,17 +79,13 @@ class WaitlistService
             $registration = Registration::query()->whereKey($offer->registration_id)->lockForUpdate()->firstOrFail();
             $activity = Activity::query()->whereKey($registration->activity_id)->lockForUpdate()->firstOrFail();
 
-            // Double check capacity, though the spot should have been "reserved" by the Offer logic
-            // But an Admin could have reduced capacity in the meantime.
             $confirmedButNotMe = Registration::query()
                 ->where('activity_id', $activity->id)
                 ->where('status', Registration::STATUS_CONFIRMED)
                 ->count();
             
-            // Note: We don't count OFFER_SENT here because we ARE one of them.
             
             if ($activity->capacity !== null && $confirmedButNotMe >= $activity->capacity) {
-                // Edge case: Capacity reduced while offer was out.
                 throw new RuntimeException('Activity is full despite offer.');
             }
 
@@ -125,7 +118,6 @@ class WaitlistService
                 $registration->save();
             }
 
-            // Immediately try to fill the spot
             if ($registration) {
                 $this->promoteNextIfAvailable($registration->activity_id);
             }
@@ -144,13 +136,11 @@ class WaitlistService
                 return;
             }
 
-            // If offer sent, cancel it
             WaitlistOffer::where('registration_id', $registration->id)->delete();
 
             $registration->status = Registration::STATUS_CONFIRMED;
             $registration->save();
 
-            // Notify
         });
     }
 
@@ -165,7 +155,6 @@ class WaitlistService
         $count = 0;
         foreach ($expiredOffers as $offer) {
             $this->db->transaction(function () use ($offer) {
-                // Re-fetch to lock
                 $offer = WaitlistOffer::query()->whereKey($offer->id)->lockForUpdate()->first();
                 if (!$offer || $offer->accepted_at || $offer->declined_at) return;
 
@@ -177,11 +166,8 @@ class WaitlistService
                     $registration->status = Registration::STATUS_CANCELED; // Or specialized STATUS_TIMEOUT
                     $registration->save();
                     
-                    // Notify user they missed it? 
-                    // $this->notificationService->queueWaitlistMissed($registration);
                 }
                 
-                // Try to fill the spot
                 if ($registration) {
                     $this->promoteNextIfAvailable($registration->activity_id);
                 }

@@ -29,8 +29,6 @@ class AuthController extends Controller
             return redirect()->intended(route('dashboard'));
         }
 
-        // If login fails, we return a generic error. 
-        // For security reasons, it's better not to tell exactly if it's the email or password that is wrong.
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
         ])->onlyInput('email');

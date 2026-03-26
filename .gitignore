@@ -8,6 +8,9 @@
 /.vscode
 /.zed
 /auth.json
+/.env
+/.env.*
+!/.env.example
 /node_modules
 /public/build
 /public/hot

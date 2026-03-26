@@ -14,7 +14,6 @@ class HomeController extends Controller
         $today = Carbon::today();
         $monthStart = $today->copy()->startOfMonth();
 
-        // Fetch sessions for a wider range to support client-side navigation (e.g., 6 months)
         $rangeStart = $monthStart->copy()->subMonths(3)->startOfMonth();
         $rangeEnd = $monthStart->copy()->addMonths(3)->endOfMonth();
 

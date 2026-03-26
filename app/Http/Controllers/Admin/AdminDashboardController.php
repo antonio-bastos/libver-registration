@@ -176,7 +176,6 @@ class AdminDashboardController extends Controller
 
         $activity = Activity::create($data);
 
-        // Also create a default session for simplicity
         $activity->sessions()->create([
             'start_at' => $data['start_at'],
             'end_at' => $data['end_at'],
@@ -225,7 +224,6 @@ class AdminDashboardController extends Controller
 
         $activity->update($data);
 
-        // Update sessions with the new data
         $activity->sessions()->update([
             'start_at' => $data['start_at'],
             'end_at' => $data['end_at'],

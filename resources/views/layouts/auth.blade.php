@@ -504,7 +504,6 @@
     </main>
 
     <script>
-        // Password visibility toggle logic
         function togglePassword(inputId, iconId) {
             const input = document.getElementById(inputId);
             const icon = document.getElementById(iconId);

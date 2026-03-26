@@ -73,7 +73,6 @@
 <script>
     document.getElementById('loginForm').addEventListener('submit', function(e) {
         const btn = document.getElementById('submitBtn');
-        // Simple client-side check if form is valid (email and password exist)
         if(document.getElementById('email').value && document.getElementById('password').value) {
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span> Signing In...';

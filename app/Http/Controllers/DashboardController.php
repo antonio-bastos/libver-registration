@@ -22,13 +22,11 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        // 1. Fetch children and their registrations
         $children = Child::query()
             ->where('user_id', $user->id)
             ->with(['registrations.activity'])
             ->get();
 
-        // 2. Fetch self-registrations
         $selfRegistrations = Registration::query()
             ->where('user_id', $user->id)
             ->whereNull('child_id')
@@ -36,7 +34,6 @@ class DashboardController extends Controller
             ->with('activity')
             ->get();
 
-        // 3. Common data for status calculation
         $allActiveRegistrations = Registration::query()
             ->where(function($q) use ($user, $children) {
                 $q->whereIn('child_id', $children->pluck('id'))
@@ -63,7 +60,6 @@ class DashboardController extends Controller
             ->get()
             ->groupBy('activity_id');
 
-        // 4. Format registrations
         $formatRegistrations = function (Collection $regs) use ($confirmedByActivity, $waitingByActivity) {
             return $regs->map(function (Registration $registration) use ($confirmedByActivity, $waitingByActivity) {
                 $activity = $registration->activity;

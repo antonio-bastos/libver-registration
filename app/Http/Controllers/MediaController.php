@@ -16,7 +16,6 @@ class MediaController extends Controller
             'owner_id' => ['required', 'integer'],
         ]);
 
-        // Authorization Check
         if ($data['owner_type'] === 'child') {
             $child = \App\Models\Child::findOrFail($data['owner_id']);
             if ($request->user()->role !== 'admin' && $child->user_id !== $request->user()->id) {

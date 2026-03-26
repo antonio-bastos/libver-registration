@@ -284,7 +284,6 @@
             <h3 class="card-title"><i class="fas fa-calendar-check"></i> Event Registrations</h3>
             @php $hasRegistrations = false; @endphp
 
-            {{-- SELF REGISTRATIONS --}}
             @if(!$selfCard['registrations']->isEmpty())
                 @php $hasRegistrations = true; @endphp
                 <div style="margin-top: 12px;">
@@ -317,7 +316,6 @@
                 </div>
             @endif
 
-            {{-- CHILD REGISTRATIONS --}}
             @foreach($children as $card)
                 @if($card['registrations'] && !$card['registrations']->isEmpty())
                     @php $hasRegistrations = true; @endphp
@@ -425,7 +423,6 @@
             }
         }
 
-        // Close on escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeQRModal();

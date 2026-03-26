@@ -691,7 +691,6 @@
                     const meta = normalize(bubble.getAttribute('data-meta'));
                     const body = normalize(bubble.getAttribute('data-body'));
 
-                    // Extract venue and age group from meta if possible
                     let ageMatch = true;
                     if (selectedCategory === 'adults') ageMatch = meta.includes('17');
                     else if (selectedCategory === 'toddlers') ageMatch = meta.includes('1-3');
@@ -820,12 +819,10 @@
                 modalActivityId.value = activityId || '';
             }
 
-            // Update registration checkboxes if logged in
             const registrations = userRegistrations[activityId] || [];
             let allRegistered = true;
             let selectableCount = 0;
 
-            // For self
             const selfCheckbox = document.querySelector('input[name="register_self"]');
             if (selfCheckbox) {
                 const isRegistered = registrations.includes('self');
@@ -858,7 +855,6 @@
                 }
             }
 
-            // For children
             const childCheckboxes = document.querySelectorAll('input[name="child_ids[]"]');
             childCheckboxes.forEach(cb => {
                 const childId = parseInt(cb.value);
@@ -923,7 +919,6 @@
         document.querySelectorAll('[data-modal-close]').forEach(btn => btn.addEventListener('click', closeModal));
         modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 
-        // Tooltip logic
         function createTooltip(element, title, meta) {
             let tooltip = document.createElement('div');
             tooltip.className = 'event-tooltip';

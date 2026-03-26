@@ -388,7 +388,6 @@
         }
     }
 
-    // Password Strength Logic
     document.addEventListener('DOMContentLoaded', function() {
         const passwordField = document.getElementById('password');
         const strengthMeter = document.getElementById('strengthMeter');
@@ -399,7 +398,6 @@
             passwordField.addEventListener('input', function() {
                 const val = this.value;
                 
-                // Show meter if user has started typing
                 if (val.length > 0) {
                     strengthMeter.style.display = 'block';
                 } else {
@@ -409,14 +407,12 @@
 
                 let score = 0;
                 
-                // Criteria
                 if (val.length >= 8) score++;
                 if (val.length >= 12) score++;
                 if (/[A-Z]/.test(val)) score++;
                 if (/[0-9]/.test(val)) score++;
                 if (/[^A-Za-z0-9]/.test(val)) score++;
 
-                // Identify strength levels (0-5 score)
                 let width = 0;
                 let colorClass = '';
                 let label = '';
@@ -439,12 +435,10 @@
                     label = 'Strong';
                 }
 
-                // Apply styles
                 strengthBar.style.width = width + '%';
                 strengthBar.className = 'meter-bar ' + colorClass;
                 strengthText.textContent = label;
                 
-                // Color text
                 if (score < 2) strengthText.style.color = '#ef4444';
                 else if (score < 4) strengthText.style.color = '#f59e0b';
                 else if (score < 5) strengthText.style.color = '#3b82f6';

@@ -72,7 +72,6 @@
             <div class="card">
                 <h3 style="margin-bottom: 20px;">Registrations</h3>
                 
-                {{-- SELF REGISTRATIONS --}}
                 <div style="margin-bottom: 32px; padding-bottom: 24px; border-bottom: 2px solid var(--border);">
                     <h4 style="margin-bottom: 12px; color: var(--primary);">User Self-Registrations</h4>
                     <div class="table-container">
@@ -137,7 +136,6 @@
                     </div>
                 </div>
 
-                {{-- CHILD REGISTRATIONS --}}
                 <h4 style="margin-bottom: 16px;">Children & Their Registrations</h4>
                 @forelse($user->children as $child)
                     <div style="margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border);">

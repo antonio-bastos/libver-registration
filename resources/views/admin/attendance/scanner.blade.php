@@ -182,7 +182,6 @@
                     const parts = parsed.pathname.split('/').filter(Boolean);
                     return parts.pop() || value;
                 } catch (_) {
-                    // Not a URL, fall through
                 }
 
                 const hashIndex = value.indexOf('#');
