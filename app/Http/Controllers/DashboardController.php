@@ -4,13 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\Child;
 use App\Models\Registration;
-use App\Models\User;
+use App\Services\AttendanceService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Support\Collection;
 
 class DashboardController extends Controller
 {
+    private AttendanceService $attendanceService;
+
+    public function __construct(AttendanceService $attendanceService)
+    {
+        $this->attendanceService = $attendanceService;
+    }
+
     public function index(Request $request): View
     {
         $user = $request->user();
@@ -78,11 +85,17 @@ class DashboardController extends Controller
                     $statusLabel = $position ? 'Waitlist ' . $position : 'Waitlist';
                 }
 
+                $qrCodeData = null;
+                if ($registration->status === Registration::STATUS_CONFIRMED && !$registration->attended) {
+                    $qrCodeData = $this->attendanceService->generateCheckInToken($registration);
+                }
+
                 return [
                     'registration' => $registration,
                     'activity' => $activity,
                     'status_label' => $statusLabel,
                     'status_state' => $statusState,
+                    'qr_code_data' => $qrCodeData,
                 ];
             })->values();
         };

@@ -69,22 +69,7 @@ class AdminActivityController extends Controller
         ]);
 
         try {
-            $decoded = json_decode($data['qr_data'], true);
-            if (!$decoded || !isset($decoded['p']) || !isset($decoded['s'])) {
-                throw new \Exception('Invalid QR format.');
-            }
-
-            $payload = $decoded['p'];
-            $signature = $decoded['s'];
-
-            // Verify signature
-            $expectedSignature = hash_hmac('sha256', $payload, config('app.key'));
-            if (!hash_equals($expectedSignature, $signature)) {
-                throw new \Exception('Security signature mismatch.');
-            }
-
-            $registrationData = json_decode($payload, true);
-            $registration = Registration::findOrFail($registrationData['id']);
+            $registration = $this->resolveRegistrationFromQrData($data['qr_data']);
 
             if ($registration->attended) {
                 return response()->json(['success' => false, 'message' => 'Already marked as attended.']);
@@ -103,6 +88,70 @@ class AdminActivityController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
+    }
+
+    private function resolveRegistrationFromQrData(string $rawQrData): Registration
+    {
+        $qrData = trim($rawQrData);
+
+        $decoded = json_decode($qrData, true);
+        if (is_array($decoded) && isset($decoded['p'], $decoded['s'])) {
+            $payload = (string) $decoded['p'];
+            $signature = (string) $decoded['s'];
+
+            $expectedSignature = hash_hmac('sha256', $payload, config('app.key'));
+            if (!hash_equals($expectedSignature, $signature)) {
+                throw new \Exception('Security signature mismatch.');
+            }
+
+            $registrationData = json_decode($payload, true);
+            if (!is_array($registrationData) || !isset($registrationData['id'])) {
+                throw new \Exception('Invalid QR payload.');
+            }
+
+            $registration = Registration::find($registrationData['id']);
+            if (!$registration) {
+                throw new \Exception('Registration not found for this QR code.');
+            }
+
+            return $registration;
+        }
+
+        $token = $this->extractTokenValue($qrData);
+        if ($token === '') {
+            throw new \Exception('Invalid QR format.');
+        }
+
+        $registration = Registration::where('check_in_token', $token)->first();
+        if (!$registration) {
+            throw new \Exception('Invalid or expired check-in token.');
+        }
+
+        return $registration;
+    }
+
+    private function extractTokenValue(string $qrData): string
+    {
+        $value = trim($qrData);
+
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            $path = parse_url($value, PHP_URL_PATH);
+            if (is_string($path) && $path !== '') {
+                $segments = array_values(array_filter(explode('/', $path)));
+                if (!empty($segments)) {
+                    return trim((string) end($segments));
+                }
+            }
+        }
+
+        if (str_contains($value, '/')) {
+            $segments = array_values(array_filter(explode('/', $value)));
+            if (!empty($segments)) {
+                $value = (string) end($segments);
+            }
+        }
+
+        return trim($value);
     }
 
     public function absent(Registration $registration)

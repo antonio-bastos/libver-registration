@@ -303,17 +303,7 @@
                             </div>
                             <div class="actions">
                                 @if($item['status_state'] === 'confirmed' && !$item['registration']->attended)
-                                    @php
-                                        $payload = json_encode([
-                                            'id' => $item['registration']->id,
-                                            'user' => auth()->user()->name . ' ' . auth()->user()->surname,
-                                            'event' => $item['activity']?->title,
-                                            'ts' => time()
-                                        ]);
-                                        $signature = hash_hmac('sha256', $payload, config('app.key'));
-                                        $qrData = json_encode(['p' => $payload, 's' => $signature]);
-                                    @endphp
-                                    <button onclick="showQRCode('{{ addslashes($qrData) }}', '{{ addslashes($item['activity']?->title) }}')" class="btn btn-success">
+                                    <button onclick="showQRCode('{{ $item['qr_code_data'] }}', '{{ addslashes($item['activity']?->title) }}')" class="btn btn-success">
                                         <i class="fas fa-qrcode"></i> Check-in QR
                                     </button>
                                 @endif
@@ -347,17 +337,7 @@
                                 </div>
                                 <div class="actions">
                                     @if($item['status_state'] === 'confirmed' && !$item['registration']->attended)
-                                        @php
-                                            $payload = json_encode([
-                                                'id' => $item['registration']->id,
-                                                'user' => $card['child']->first_name . ' ' . $card['child']->last_name,
-                                                'event' => $item['activity']?->title,
-                                                'ts' => time()
-                                            ]);
-                                            $signature = hash_hmac('sha256', $payload, config('app.key'));
-                                            $qrData = json_encode(['p' => $payload, 's' => $signature]);
-                                        @endphp
-                                        <button onclick="showQRCode('{{ addslashes($qrData) }}', '{{ addslashes($item['activity']?->title) }}')" class="btn btn-success">
+                                        <button onclick="showQRCode('{{ $item['qr_code_data'] }}', '{{ addslashes($item['activity']?->title) }}')" class="btn btn-success">
                                             <i class="fas fa-qrcode"></i> Check-in QR
                                         </button>
                                     @endif
@@ -430,11 +410,11 @@
 
             qrCodeInstance = new QRCode(container, {
                 text: data,
-                width: 200,
-                height: 200,
+                width: 280,
+                height: 280,
                 colorDark : "#000000",
                 colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
+                correctLevel : QRCode.CorrectLevel.M
             });
         }
 

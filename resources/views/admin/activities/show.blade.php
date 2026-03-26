@@ -3,6 +3,54 @@
 @section('title', 'Activity Details')
 
 @section('content')
+    <style>
+        #scanner-modal {
+            align-items: flex-start !important;
+            justify-content: center;
+            padding: 20px 12px;
+            overflow-y: auto;
+        }
+
+        #scanner-modal .scanner-modal-card {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 520px;
+            text-align: center;
+            position: relative;
+            margin: auto 0;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        #reader {
+            width: min(100%, 340px);
+            height: min(55vh, 440px);
+            min-height: 280px;
+            margin: 0 auto;
+            overflow: hidden;
+            border-radius: 12px;
+            background: #0f172a;
+        }
+
+        @media (max-height: 760px) {
+            #reader {
+                width: min(100%, 300px);
+                height: min(48vh, 360px);
+                min-height: 240px;
+            }
+        }
+
+        #reader video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+            background: #000;
+        }
+    </style>
+
     <div class="top-bar">
         <h1>{{ $activity->title }} - Management</h1>
         <div style="display: flex; gap: 12px;">
@@ -123,15 +171,15 @@
             <a href="{{ route('admin.activities.export', $activity) }}" class="btn btn-outline">
                 <i class="fas fa-file-export"></i> Export CSV
             </a>
-        </div>
+    </div>
 
     <!-- Scanner Modal -->
-    <div id="scanner-modal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
-        <div style="background: white; padding: 24px; border-radius: 16px; width: 100%; max-width: 500px; text-align: center; position: relative;">
+    <div id="scanner-modal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; backdrop-filter: blur(5px);">
+        <div class="scanner-modal-card">
             <button onclick="closeScanner()" style="position: absolute; top: 16px; right: 16px; border: none; background: #f1f5f9; width: 32px; height: 32px; border-radius: 50%; cursor: pointer;">&times;</button>
             <h3 style="margin-bottom: 20px;">Scan Attendee QR Code</h3>
             
-            <div id="reader" style="width: 100%; overflow: hidden; border-radius: 12px; background: #f8fafc;"></div>
+            <div id="reader"></div>
             
             <div id="scanner-status" style="margin-top: 16px; font-weight: 500; color: var(--text-muted);">
                 Waiting for camera...
@@ -141,34 +189,225 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js" crossorigin="anonymous"></script>
     <script>
-        let html5QrCode = null;
+        let scannerOpen = false;
+        let processingScan = false;
+        let cameraStream = null;
+        let scanIntervalId = null;
+        let scanInProgress = false;
+        let barcodeDetector = null;
+        let scannerVideo = null;
+        let scanCanvas = null;
+        let scanContext = null;
 
-        function openScanner() {
-            document.getElementById('scanner-modal').style.display = 'flex';
-            document.getElementById('scanner-status').textContent = 'Initialing camera...';
-            
-            html5QrCode = new Html5Qrcode("reader");
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-            html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
-                .then(() => {
-                    document.getElementById('scanner-status').textContent = 'Scanning... Align QR code in the box';
-                })
-                .catch(err => {
-                    document.getElementById('scanner-status').textContent = 'Error: ' + err;
-                    document.getElementById('scanner-status').style.color = 'var(--danger)';
-                });
+        function setScannerStatus(message, isError = false) {
+            const status = document.getElementById('scanner-status');
+            status.textContent = message;
+            status.style.color = isError ? 'var(--danger)' : 'var(--text-muted)';
         }
 
-        function onScanSuccess(decodedText, decodedResult) {
-            // Stop scanning once success
-            html5QrCode.stop().then(() => {
-                document.getElementById('scanner-status').textContent = 'Verifying...';
-                
-                // Send to server
-                fetch("{{ route('admin.registrations.mark_attended') }}", {
+        function ensureScannerVideo() {
+            if (scannerVideo) {
+                return scannerVideo;
+            }
+
+            const reader = document.getElementById('reader');
+            scannerVideo = document.createElement('video');
+            scannerVideo.setAttribute('playsinline', 'true');
+            scannerVideo.setAttribute('autoplay', 'true');
+            scannerVideo.setAttribute('muted', 'true');
+            scannerVideo.muted = true;
+
+            reader.innerHTML = '';
+            reader.appendChild(scannerVideo);
+
+            return scannerVideo;
+        }
+
+        async function ensureDetector() {
+            if (barcodeDetector !== null) {
+                return barcodeDetector;
+            }
+
+            if (!('BarcodeDetector' in window)) {
+                barcodeDetector = false;
+                return null;
+            }
+
+            try {
+                const supportedFormats = await BarcodeDetector.getSupportedFormats();
+                if (!supportedFormats.includes('qr_code')) {
+                    barcodeDetector = false;
+                    return null;
+                }
+
+                barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+                return barcodeDetector;
+            } catch (_) {
+                barcodeDetector = false;
+                return null;
+            }
+        }
+
+        async function startCamera() {
+            const video = ensureScannerVideo();
+
+            const candidates = [
+                { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
+                { video: { facingMode: 'environment' }, audio: false },
+                { video: true, audio: false },
+            ];
+
+            let stream = null;
+            for (const constraints of candidates) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    break;
+                } catch (_) {}
+            }
+
+            if (!stream) {
+                throw new Error('Camera access failed.');
+            }
+
+            cameraStream = stream;
+            video.srcObject = stream;
+            await video.play();
+            setScannerStatus('Scanning... align the QR code in the box.');
+        }
+
+        function stopScanLoop() {
+            if (scanIntervalId) {
+                clearInterval(scanIntervalId);
+                scanIntervalId = null;
+            }
+        }
+
+        async function stopCamera() {
+            stopScanLoop();
+            scanInProgress = false;
+
+            if (scannerVideo) {
+                try {
+                    scannerVideo.pause();
+                } catch (_) {}
+                scannerVideo.srcObject = null;
+            }
+
+            if (cameraStream) {
+                for (const track of cameraStream.getTracks()) {
+                    track.stop();
+                }
+                cameraStream = null;
+            }
+        }
+
+        async function scanOnce() {
+            if (!scannerOpen || processingScan || scanInProgress || !scannerVideo) {
+                return;
+            }
+
+            if (scannerVideo.readyState < 2) {
+                return;
+            }
+
+            scanInProgress = true;
+            try {
+                const width = scannerVideo.videoWidth;
+                const height = scannerVideo.videoHeight;
+                if (!width || !height) {
+                    return;
+                }
+
+                const scale = Math.min(1, 960 / Math.max(width, height));
+                const frameWidth = Math.max(1, Math.floor(width * scale));
+                const frameHeight = Math.max(1, Math.floor(height * scale));
+
+                if (!scanCanvas) {
+                    scanCanvas = document.createElement('canvas');
+                    scanContext = scanCanvas.getContext('2d', { willReadFrequently: true });
+                }
+
+                if (!scanContext) {
+                    throw new Error('Unable to initialize scanner canvas.');
+                }
+
+                if (scanCanvas.width !== frameWidth || scanCanvas.height !== frameHeight) {
+                    scanCanvas.width = frameWidth;
+                    scanCanvas.height = frameHeight;
+                }
+
+                scanContext.drawImage(scannerVideo, 0, 0, frameWidth, frameHeight);
+
+                let decodedText = '';
+                const detector = await ensureDetector();
+                if (detector) {
+                    const codes = await detector.detect(scanCanvas);
+                    if (codes.length && codes[0].rawValue) {
+                        decodedText = codes[0].rawValue;
+                    }
+                }
+
+                if (!decodedText && typeof jsQR === 'function') {
+                    const imageData = scanContext.getImageData(0, 0, frameWidth, frameHeight);
+                    const qrResult = jsQR(imageData.data, frameWidth, frameHeight, { inversionAttempts: 'attemptBoth' });
+                    if (qrResult && qrResult.data) {
+                        decodedText = qrResult.data;
+                    }
+                }
+
+                if (!detector && typeof jsQR !== 'function') {
+                    setScannerStatus('Scanner engine unavailable. Please refresh.', true);
+                }
+
+                if (decodedText) {
+                    await onScanSuccess(decodedText);
+                }
+            } finally {
+                scanInProgress = false;
+            }
+        }
+
+        function startScanLoop() {
+            stopScanLoop();
+            scanIntervalId = setInterval(() => {
+                scanOnce().catch(() => {});
+            }, 180);
+        }
+
+        async function openScanner() {
+            if (scannerOpen) {
+                return;
+            }
+
+            scannerOpen = true;
+            processingScan = false;
+            document.getElementById('scanner-modal').style.display = 'flex';
+            setScannerStatus('Initializing camera...');
+
+            try {
+                await startCamera();
+                startScanLoop();
+            } catch (error) {
+                scannerOpen = false;
+                const message = error && error.message ? error.message : String(error);
+                setScannerStatus('Unable to start camera: ' + message, true);
+            }
+        }
+
+        async function onScanSuccess(decodedText) {
+            if (processingScan) {
+                return;
+            }
+
+            processingScan = true;
+            setScannerStatus('Verifying...');
+
+            await stopCamera();
+
+            try {
+                const response = await fetch("{{ route('admin.registrations.mark_attended') }}", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -176,33 +415,53 @@
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({ qr_data: decodedText })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.message);
-                        window.location.reload();
-                    } else {
-                        alert('Error: ' + data.message);
-                        // Restart scanner after short delay if failed
-                        setTimeout(openScanner, 2000);
-                    }
-                })
-                .catch(error => {
-                    alert('Request failed. Please try again.');
-                    setTimeout(openScanner, 2000);
                 });
-            });
+
+                const data = await response.json().catch(() => ({
+                    success: false,
+                    message: 'Unexpected server response while verifying QR code.'
+                }));
+
+                if (response.ok && data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                    return;
+                }
+
+                alert('Error: ' + (data.message || 'Unable to verify QR code.'));
+                processingScan = false;
+                if (scannerOpen) {
+                    try {
+                        await startCamera();
+                        startScanLoop();
+                    } catch (error) {
+                        const message = error && error.message ? error.message : String(error);
+                        setScannerStatus('Unable to restart camera: ' + message, true);
+                    }
+                }
+            } catch (_) {
+                alert('Request failed. Please try again.');
+                processingScan = false;
+                if (scannerOpen) {
+                    try {
+                        await startCamera();
+                        startScanLoop();
+                    } catch (error) {
+                        const message = error && error.message ? error.message : String(error);
+                        setScannerStatus('Unable to restart camera: ' + message, true);
+                    }
+                }
+            }
         }
 
-        function closeScanner() {
-            if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().then(() => {
-                    document.getElementById('scanner-modal').style.display = 'none';
-                });
-            } else {
-                document.getElementById('scanner-modal').style.display = 'none';
-            }
+        async function closeScanner() {
+            scannerOpen = false;
+            processingScan = false;
+
+            await stopCamera();
+
+            document.getElementById('scanner-modal').style.display = 'none';
+            setScannerStatus('Waiting for camera...');
         }
     </script>
 @endsection
