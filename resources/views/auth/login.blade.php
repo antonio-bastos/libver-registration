@@ -3,6 +3,15 @@
 @section('title', 'Login - Veria Central Public Library')
 @section('width', '420px')
 
+@push('styles')
+<style>
+    .main {
+        align-items: flex-start;
+        padding-top: 28px;
+    }
+</style>
+@endpush
+
 @section('content')
     <form method="POST" action="{{ route('login.submit') }}" id="loginForm" novalidate>
         @csrf

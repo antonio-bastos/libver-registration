@@ -49,19 +49,7 @@
             flex-direction: column;
             color: var(--text-dark);
             position: relative;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(248, 250, 252, 0.10) 0%, rgba(224, 242, 254, 0.10) 100%), 
-                        url('https://www.libver.gr/wp-content/uploads/2014/10/anakprotos.jpg') center/cover fixed;
-            filter: blur(6px);
-            z-index: -1;
+            background: #f4f6f8;
         }
 
         header {
