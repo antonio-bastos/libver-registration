@@ -72,7 +72,6 @@ Route::middleware(['auth', 'role:admin,instructor'])->prefix('admin')->group(fun
     Route::get('/activities/{activity}/export', [AdminActivityController::class, 'export'])->name('admin.activities.export');
     Route::post('/registrations/{registration}/promote', [AdminActivityController::class, 'promote'])->name('admin.registrations.promote');
     Route::post('/registrations/mark-attended', [AdminActivityController::class, 'markAsAttended'])->name('admin.registrations.mark_attended');
-    Route::post('/registrations/{registration}/mark-absent', [AdminActivityController::class, 'absent'])->name('admin.registrations.absent');
     Route::post('/registrations/{registration}/mark-paid', [AdminActivityController::class, 'markAsPaid'])->name('admin.registrations.mark_paid');
     Route::post('/registrations/{registration}/mark-unpaid', [AdminActivityController::class, 'markAsUnpaid'])->name('admin.registrations.mark_unpaid');
 });
