@@ -24,7 +24,11 @@ class DashboardController extends Controller
 
         $children = Child::query()
             ->where('user_id', $user->id)
-            ->with(['registrations.activity'])
+            ->with([
+                'registrations' => fn($q) => $q
+                    ->where('status', '!=', Registration::STATUS_CANCELED)
+                    ->with('activity'),
+            ])
             ->get();
 
         $selfRegistrations = Registration::query()
@@ -34,31 +38,30 @@ class DashboardController extends Controller
             ->with('activity')
             ->get();
 
-        $allActiveRegistrations = Registration::query()
-            ->where(function($q) use ($user, $children) {
-                $q->whereIn('child_id', $children->pluck('id'))
-                  ->orWhere(function($sq) use ($user) {
-                      $sq->where('user_id', $user->id)->whereNull('child_id');
-                  });
-            })
-            ->where('status', '!=', Registration::STATUS_CANCELED)
-            ->get();
+        $activityIds = $children
+            ->flatMap(fn(Child $child) => $child->registrations->pluck('activity_id'))
+            ->merge($selfRegistrations->pluck('activity_id'))
+            ->unique()
+            ->values();
 
-        $activityIds = $allActiveRegistrations->pluck('activity_id')->unique()->values();
+        $confirmedByActivity = collect();
+        $waitingByActivity = collect();
 
-        $confirmedByActivity = Registration::query()
-            ->whereIn('activity_id', $activityIds)
-            ->where('status', Registration::STATUS_CONFIRMED)
-            ->orderBy('created_at')
-            ->get()
-            ->groupBy('activity_id');
+        if ($activityIds->isNotEmpty()) {
+            $confirmedByActivity = Registration::query()
+                ->whereIn('activity_id', $activityIds)
+                ->where('status', Registration::STATUS_CONFIRMED)
+                ->orderBy('created_at')
+                ->get(['id', 'activity_id'])
+                ->groupBy('activity_id');
 
-        $waitingByActivity = Registration::query()
-            ->whereIn('activity_id', $activityIds)
-            ->where('status', Registration::STATUS_WAITING)
-            ->orderBy('position')
-            ->get()
-            ->groupBy('activity_id');
+            $waitingByActivity = Registration::query()
+                ->whereIn('activity_id', $activityIds)
+                ->where('status', Registration::STATUS_WAITING)
+                ->orderBy('position')
+                ->get(['id', 'activity_id', 'position'])
+                ->groupBy('activity_id');
+        }
 
         $formatRegistrations = function (Collection $regs) use ($confirmedByActivity, $waitingByActivity) {
             return $regs->map(function (Registration $registration) use ($confirmedByActivity, $waitingByActivity) {
@@ -99,7 +102,7 @@ class DashboardController extends Controller
         $childCards = $children->map(function (Child $child) use ($formatRegistrations) {
             return [
                 'child' => $child,
-                'registrations' => $formatRegistrations($child->registrations->where('status', '!=', Registration::STATUS_CANCELED)),
+                'registrations' => $formatRegistrations($child->registrations),
             ];
         });
 

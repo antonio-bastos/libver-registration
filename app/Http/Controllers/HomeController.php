@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\ActivitySession;
+use App\Models\Registration;
 use Carbon\Carbon;
 use Illuminate\View\View;
 
@@ -18,8 +19,9 @@ class HomeController extends Controller
         $rangeEnd = $monthStart->copy()->addMonths(3)->endOfMonth();
 
         $allSessions = ActivitySession::query()
+            ->select(['id', 'activity_id', 'start_at', 'location'])
             ->whereBetween('start_at', [$rangeStart, $rangeEnd])
-            ->with('activity')
+            ->with(['activity:id,title,description_html,age_group,location'])
             ->orderBy('start_at')
             ->get();
 
@@ -38,8 +40,9 @@ class HomeController extends Controller
         })->groupBy('date');
 
         $actions = ActivitySession::query()
+            ->select(['id', 'activity_id', 'start_at', 'location'])
             ->where('start_at', '>=', now())
-            ->with('activity')
+            ->with(['activity:id,title,description_html,age_group,location'])
             ->orderBy('start_at')
             ->limit(6)
             ->get();
@@ -63,8 +66,8 @@ class HomeController extends Controller
             $user = auth()->user();
             $childIds = $user->children()->pluck('id')->toArray();
 
-            $userRegistrations = \App\Models\Registration::query()
-                ->where('status', '!=', \App\Models\Registration::STATUS_CANCELED)
+            $userRegistrations = Registration::query()
+                ->where('status', '!=', Registration::STATUS_CANCELED)
                 ->where(function ($query) use ($user, $childIds) {
                     $query->where('user_id', $user->id)
                           ->orWhereIn('child_id', $childIds);
