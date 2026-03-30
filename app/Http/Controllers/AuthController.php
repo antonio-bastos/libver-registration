@@ -6,6 +6,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
 use App\Services\MailingListService;
+use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -49,9 +50,14 @@ class AuthController extends Controller
         return view('auth.register');
     }
 
-    public function register(RegisterRequest $request, MailingListService $mailingListService): RedirectResponse
+    public function register(
+        RegisterRequest $request,
+        MailingListService $mailingListService,
+        NotificationService $notificationService
+    ): RedirectResponse
     {
         $data = $request->validated();
+        $requestedNewsletter = !empty($data['subscribe_newsletter']);
 
         $user = User::query()->create([
             'name' => $data['name'],
@@ -62,13 +68,20 @@ class AuthController extends Controller
             'phone' => $data['phone'],
             'card_number' => $data['card_number'],
             'dob' => $data['dob'],
-            'newsletter_subscribed' => !empty($data['subscribe_newsletter']),
-            'newsletter_subscribed_at' => !empty($data['subscribe_newsletter']) ? now() : null,
+            'newsletter_subscribed' => false,
+            'newsletter_subscribed_at' => null,
         ]);
 
-        if (!empty($data['subscribe_newsletter'])) {
-            $mailingListService->subscribeUser($user, 'account_registration');
+        if ($requestedNewsletter) {
+            $subscribed = $mailingListService->subscribeUser($user, 'account_registration');
+            if ($subscribed) {
+                $user->newsletter_subscribed = true;
+                $user->newsletter_subscribed_at = now();
+                $user->save();
+            }
         }
+
+        $notificationService->queueAccountCreated($user);
 
         Auth::login($user);
 

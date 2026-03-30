@@ -25,7 +25,6 @@
             height: 100%;
             overflow: hidden;
             font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: radial-gradient(circle at 20% 20%, #0b2447 0%, var(--bg) 50%, #01040b 100%);
             color: var(--text);
         }
 

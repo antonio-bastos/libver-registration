@@ -37,7 +37,7 @@ return [
 
     'ethermailer' => [
         'api_key' => env('ETHERMAILER_API_KEY'),
-        'endpoint' => env('ETHERMAILER_API_ENDPOINT', 'https://api.ethermailer.com/v1/subscribers'),
+        'endpoint' => env('ETHERMAILER_API_ENDPOINT', 'https://api.ethermailer.com/user/contact'),
         'list_id' => env('ETHERMAILER_LIST_ID'),
     ],
 

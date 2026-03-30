@@ -68,11 +68,12 @@ class RegistrationController extends Controller
 
         if ($request->has('newsletter_opt_in') && !$request->user()->newsletter_subscribed) {
             $user = $request->user();
-            $user->newsletter_subscribed = true;
-            $user->newsletter_subscribed_at = now();
-            $user->save();
-
-            $mailingListService->subscribeUser($user, 'event_registration');
+            $subscribed = $mailingListService->subscribeUser($user, 'event_registration');
+            if ($subscribed) {
+                $user->newsletter_subscribed = true;
+                $user->newsletter_subscribed_at = now();
+                $user->save();
+            }
         }
 
         if ($request->expectsJson()) {

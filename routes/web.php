@@ -83,9 +83,11 @@ Route::middleware(['auth', 'role:admin,instructor'])->prefix('admin')->group(fun
     Route::post('/activities/{activity}/duplicate', [AdminDashboardController::class, 'duplicate'])->name('admin.activities.duplicate');
     Route::post('/activities/{activity}/postpone', [AdminDashboardController::class, 'postpone'])->name('admin.activities.postpone');
 
-    Route::get('/check-in/{token}', [AttendanceController::class, 'scan'])->name('admin.checkin.scan');
     Route::get('/check-in/tablet', [AttendanceController::class, 'tabletIndex'])->name('admin.checkin.tablet');
     Route::get('/check-in/tablet/{activity}/public', [AttendanceController::class, 'tabletPublic'])->name('admin.checkin.tablet_public');
+    Route::get('/check-in/{token}', [AttendanceController::class, 'scan'])
+        ->where('token', '[A-Za-z0-9]{32}')
+        ->name('admin.checkin.scan');
     Route::post('/registrations/{registration}/absent', [AttendanceController::class, 'markAbsent'])->name('admin.registrations.absent');
     Route::post('/registrations/{registration}/unmark-attendance', [AttendanceController::class, 'unmarkAttendance'])->name('admin.registrations.unmark_attendance');
 

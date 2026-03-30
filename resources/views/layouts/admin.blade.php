@@ -198,32 +198,34 @@
 
     <div class="admin-nav">
         <div class="admin-nav-container">
+            @if(auth()->user()->role === 'admin')
             <a href="{{ route('admin.dashboard') }}" class="admin-nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                 <i class="fas fa-chart-line"></i> Overview
-            </a>
-            <a href="{{ route('admin.activities.index') }}" class="admin-nav-link {{ request()->routeIs('admin.activities.*') ? 'active' : '' }}">
-                <i class="fas fa-calendar-alt"></i> Events
-            </a>
-            <a href="{{ route('admin.activities.archived') }}" class="admin-nav-link {{ request()->routeIs('admin.activities.archived') ? 'active' : '' }}">
-                <i class="fas fa-box-archive"></i> Archive
-            </a>
-            <a href="{{ route('admin.analytics') }}" class="admin-nav-link {{ request()->routeIs('admin.analytics') ? 'active' : '' }}">
-                <i class="fas fa-chart-column"></i> Insights
             </a>
             <a href="{{ route('admin.search') }}" class="admin-nav-link {{ request()->routeIs('admin.search') ? 'active' : '' }}">
                 <i class="fas fa-search"></i> Search
             </a>
-            <a href="{{ route('admin.checkin.tablet') }}" class="admin-nav-link {{ request()->routeIs('admin.checkin.tablet*') ? 'active' : '' }}">
-                <i class="fas fa-tablet-alt"></i> Tablet Check-in
+            @endif
+            <a href="{{ route('admin.activities.index') }}" class="admin-nav-link {{ request()->routeIs('admin.activities.*') ? 'active' : '' }}">
+                <i class="fas fa-calendar-alt"></i> Events
             </a>
             @if(auth()->user()->role === 'admin')
-            <a href="{{ route('admin.blacklist.index') }}" class="admin-nav-link {{ request()->routeIs('admin.blacklist.*') ? 'active' : '' }}">
-                <i class="fas fa-user-slash"></i> Blacklist
-            </a>
             <a href="{{ route('admin.users.index') }}" class="admin-nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                 <i class="fas fa-users"></i> Users
             </a>
+            <a href="{{ route('admin.analytics') }}" class="admin-nav-link {{ request()->routeIs('admin.analytics') ? 'active' : '' }}">
+                <i class="fas fa-chart-column"></i> Insights
+            </a>
+            <a href="{{ route('admin.activities.archived') }}" class="admin-nav-link {{ request()->routeIs('admin.activities.archived') ? 'active' : '' }}">
+                <i class="fas fa-box-archive"></i> Archive
+            </a>
+            <a href="{{ route('admin.blacklist.index') }}" class="admin-nav-link {{ request()->routeIs('admin.blacklist.*') ? 'active' : '' }}">
+                <i class="fas fa-user-slash"></i> Blacklist
+            </a>
             @endif
+            <a href="{{ route('admin.checkin.tablet') }}" class="admin-nav-link {{ request()->routeIs('admin.checkin.tablet*') ? 'active' : '' }}">
+                <i class="fas fa-tablet-alt"></i> Tablet Check-in
+            </a>
         </div>
     </div>
 

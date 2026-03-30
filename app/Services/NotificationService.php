@@ -13,6 +13,19 @@ use Illuminate\Support\Str;
 
 class NotificationService
 {
+    public function queueAccountCreated(User $user): void
+    {
+        $this->queue(
+            'account_created',
+            'email',
+            'user:' . $user->id,
+            [
+                'user_id' => $user->id,
+            ],
+            $this->dedupeKey('account_created', $user->id, 0)
+        );
+    }
+
     public function queueRegistrationConfirmed(Registration $registration): void
     {
         $this->queue(
@@ -147,6 +160,9 @@ class NotificationService
             ]);
 
             switch ($notification->template) {
+                case 'account_created':
+                    $this->sendAccountCreatedEmail($notification);
+                    break;
                 case 'registration_confirmed':
                     $this->sendRegistrationConfirmedEmail($notification);
                     break;
@@ -224,6 +240,33 @@ class NotificationService
         return Registration::query()
             ->with(['activity', 'child', 'user'])
             ->find((int) $registrationId);
+    }
+
+    private function userFromPayload(Notification $notification): ?User
+    {
+        $payload = $this->payload($notification);
+        $userId = $payload['user_id'] ?? null;
+        if (!$userId) {
+            return null;
+        }
+
+        return User::query()->find((int) $userId);
+    }
+
+    private function sendAccountCreatedEmail(Notification $notification): void
+    {
+        $user = $this->userFromPayload($notification);
+        if (!$user || !$user->email) {
+            return;
+        }
+
+        Mail::send('emails.account_created', [
+            'user' => $user,
+        ], function ($message) use ($user) {
+            $message
+                ->to($user->email, trim($user->name . ' ' . $user->surname))
+                ->subject('Welcome to Public Library of Veria');
+        });
     }
 
     private function sendRegistrationConfirmedEmail(Notification $notification): void
@@ -417,4 +460,3 @@ class NotificationService
         ];
     }
 }
-
