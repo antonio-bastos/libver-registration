@@ -14,4 +14,9 @@ class File extends Model
         'size',
         'type',
     ];
+
+    protected $casts = [
+        'owner_id' => 'integer',
+        'size' => 'integer',
+    ];
 }

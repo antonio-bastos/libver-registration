@@ -34,9 +34,17 @@
                             <input type="text" id="activity_subtype" name="activity_subtype" value="{{ old('activity_subtype') }}">
                         </div>
                         <div class="form-group">
+                            <label for="online_url">Online Meeting URL</label>
+                            <input type="url" id="online_url" name="online_url" value="{{ old('online_url') }}">
+                        </div>
+                        <div class="form-group">
                             <label for="live_stream_url">Live Stream URL (YouTube)</label>
                             <input type="url" id="live_stream_url" name="live_stream_url" value="{{ old('live_stream_url') }}">
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="connection_details">Online Connection Instructions</label>
+                        <textarea id="connection_details" name="connection_details" rows="3" placeholder="Optional login code, Zoom instructions, host notes...">{{ old('connection_details') }}</textarea>
                     </div>
                 </div>
 
@@ -119,7 +127,15 @@
                         </label>
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
                             <input type="checkbox" name="requires_selection" value="1" {{ old('requires_selection') ? 'checked' : '' }} style="width: auto;">
-                            Manual Selection
+                            Selection Later (Unlimited Interest)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
+                            <input type="checkbox" name="first_timers_only" value="1" {{ old('first_timers_only') ? 'checked' : '' }} style="width: auto;">
+                            First Timers Only
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
+                            <input type="checkbox" name="is_space_booking" value="1" {{ old('is_space_booking') ? 'checked' : '' }} style="width: auto;">
+                            Space Booking
                         </label>
                     </div>
 

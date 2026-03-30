@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Veria Central Public Library</title>
+    <title>Public Library of Veria</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -498,11 +498,18 @@
                     $isUserRegistered = auth()->check() && isset($userRegistrations[$session->activity_id]) && !empty($userRegistrations[$session->activity_id]);
                 @endphp
                 <div class="action-item">
+                    @if(!empty($activityImageMap[$session->activity_id]))
+                        <img src="{{ $activityImageMap[$session->activity_id] }}" alt="Activity image" style="width: 100%; max-height: 170px; object-fit: cover; border-radius: 10px; margin-bottom: 10px;">
+                    @endif
                     <div class="action-title" data-modal
                         data-activity-id="{{ $session->activity_id }}"
                         data-title="{{ $session->activity?->title ?? 'Activity' }}"
                         data-meta="{{ $session->start_at->format('d/m/Y H:i') }}"
                         data-body="{{ strip_tags($session->activity?->description_html ?? '') }}"
+                        data-requires-selection="{{ $session->activity?->requires_selection ? '1' : '0' }}"
+                        data-online-url="{{ $session->activity?->online_url }}"
+                        data-live-stream-url="{{ $session->activity?->live_stream_url }}"
+                        data-connection-details="{{ strip_tags((string) $session->activity?->connection_details) }}"
                         style="cursor:pointer; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;"
                     >
                         <span>{{ $session->activity?->title ?? 'Activity' }}</span>
@@ -514,6 +521,11 @@
                         @if ($session->activity?->age_group)
                             <span style="font-size: 12px; font-weight: 600; color: #475569; background: #e2e8f0; padding: 2px 8px; border-radius: 12px; letter-spacing: 0.02em;">
                                 {{ $session->activity->age_group }}
+                            </span>
+                        @endif
+                        @if ($session->activity?->is_space_booking)
+                            <span style="font-size: 12px; font-weight: 600; color: #065f46; background: #d1fae5; padding: 2px 8px; border-radius: 12px; letter-spacing: 0.02em;">
+                                Space Booking
                             </span>
                         @endif
                     </div>
@@ -545,6 +557,10 @@
                         data-title="{{ $session->activity?->title ?? 'Activity' }}"
                         data-meta="{{ $session->start_at->format('d/m/Y H:i') }}"
                         data-body="{{ strip_tags($session->activity?->description_html ?? '') }}"
+                        data-requires-selection="{{ $session->activity?->requires_selection ? '1' : '0' }}"
+                        data-online-url="{{ $session->activity?->online_url }}"
+                        data-live-stream-url="{{ $session->activity?->live_stream_url }}"
+                        data-connection-details="{{ strip_tags((string) $session->activity?->connection_details) }}"
                         @if ($isUserRegistered) style="background: #64748b;" @endif
                     >
                         {{ $isUserRegistered ? 'View Status' : 'Read More' }}
@@ -608,7 +624,7 @@
     </section>
 
     <div class="footer">
-        2026 © Veria Central Public Library
+        2026 © Public Library of Veria
     </div>
 
     <div class="modal" id="event-modal" aria-hidden="true">
@@ -633,9 +649,23 @@
                                 </label>
 
                                 @foreach(auth()->user()->children as $child)
-                                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
-                                        <input type="checkbox" name="child_ids[]" value="{{ $child->id }}" style="width: 18px; height: 18px;">
+                                    @php($childRestricted = $child->isRestricted())
+                                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; {{ $childRestricted ? 'opacity:0.75; background:#f8fafc;' : '' }}">
+                                        <input
+                                            type="checkbox"
+                                            name="child_ids[]"
+                                            value="{{ $child->id }}"
+                                            data-restricted="{{ $childRestricted ? '1' : '0' }}"
+                                            data-restriction-text="{{ $childRestricted ? 'Restricted until ' . $child->restrictions_until->format('d/m/Y') : '' }}"
+                                            {{ $childRestricted ? 'disabled' : '' }}
+                                            style="width: 18px; height: 18px;"
+                                        >
                                         <span style="font-size: 14px;">{{ $child->first_name }} {{ $child->last_name }}</span>
+                                        @if($childRestricted)
+                                            <span class="reg-status" style="margin-left: auto; font-size: 12px; color: #b45309; font-weight: 600;">
+                                                Restricted until {{ $child->restrictions_until->format('d/m/Y') }}
+                                            </span>
+                                        @endif
                                     </label>
                                 @endforeach
                             </div>
@@ -644,6 +674,13 @@
                                 <p style="font-size: 13px; color: #64748b; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px dashed var(--border);">
                                     No family members found. <a href="{{ route('dashboard') }}" style="color: var(--primary); font-weight: 600;">Add yourself or children in your dashboard</a> to register.
                                 </p>
+                            @endif
+
+                            @if(!auth()->user()->newsletter_subscribed)
+                                <label style="display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: #475569;">
+                                    <input type="checkbox" name="newsletter_opt_in" value="1" style="width: 16px; height: 16px;">
+                                    Also subscribe me to the library mailing list.
+                                </label>
                             @endif
                         </div>
 
@@ -771,6 +808,7 @@
                         bubble.setAttribute('data-title', session.title);
                         bubble.setAttribute('data-meta', session.meta);
                         bubble.setAttribute('data-body', session.description);
+                        bubble.setAttribute('data-requires-selection', session.requires_selection ? '1' : '0');
                         cell.appendChild(bubble);
                     });
                 }
@@ -812,9 +850,23 @@
 
         function openModal(trigger) {
             const activityId = trigger.getAttribute('data-activity-id');
+            const requiresSelection = trigger.getAttribute('data-requires-selection') === '1';
+            const onlineUrl = trigger.getAttribute('data-online-url') || '';
+            const liveStreamUrl = trigger.getAttribute('data-live-stream-url') || '';
+            const connectionDetails = trigger.getAttribute('data-connection-details') || '';
             modalTitle.textContent = trigger.getAttribute('data-title') || 'Event';
             modalMeta.textContent = trigger.getAttribute('data-meta') || '';
-            modalBody.textContent = trigger.getAttribute('data-body') || '';
+            let bodyText = trigger.getAttribute('data-body') || '';
+            if (requiresSelection) {
+                bodyText += '\n\nSelection mode: registrations are collected as interest first, then approved later.';
+            }
+            if (onlineUrl || liveStreamUrl || connectionDetails) {
+                bodyText += '\n\nOnline details:';
+                if (onlineUrl) bodyText += '\nMeeting URL: ' + onlineUrl;
+                if (liveStreamUrl) bodyText += '\nLive stream: ' + liveStreamUrl;
+                if (connectionDetails) bodyText += '\nInstructions: ' + connectionDetails;
+            }
+            modalBody.textContent = bodyText;
             if (modalActivityId) {
                 modalActivityId.value = activityId || '';
             }
@@ -859,8 +911,10 @@
             childCheckboxes.forEach(cb => {
                 const childId = parseInt(cb.value);
                 const isRegistered = registrations.includes(childId);
+                const isRestricted = cb.getAttribute('data-restricted') === '1';
+                const restrictionText = cb.getAttribute('data-restriction-text') || '(Restricted)';
                 cb.checked = isRegistered;
-                cb.disabled = isRegistered;
+                cb.disabled = isRegistered || isRestricted;
                 const childLabel = cb.closest('label');
                 const statusSpan = childLabel.querySelector('.reg-status') || document.createElement('span');
 
@@ -876,6 +930,19 @@
                     if (!childLabel.querySelector('.reg-status')) {
                         childLabel.querySelector('span').appendChild(statusSpan);
                     }
+                } else if (isRestricted) {
+                    childLabel.style.opacity = '0.75';
+                    childLabel.style.background = '#f8fafc';
+                    childLabel.style.borderColor = '#fde68a';
+                    statusSpan.className = 'reg-status';
+                    statusSpan.style.color = '#b45309';
+                    statusSpan.style.fontWeight = '700';
+                    statusSpan.style.marginLeft = '8px';
+                    statusSpan.textContent = `(${restrictionText})`;
+                    if (!childLabel.querySelector('.reg-status')) {
+                        childLabel.querySelector('span').appendChild(statusSpan);
+                    }
+                    allRegistered = false;
                 } else {
                     childLabel.style.opacity = '1';
                     childLabel.style.background = '#ffffff';
@@ -894,7 +961,7 @@
                     modalRegisterBtn.disabled = true;
                     modalRegisterBtn.style.background = '#64748b';
                 } else {
-                    modalRegisterBtn.textContent = 'Confirm Registration';
+                    modalRegisterBtn.textContent = requiresSelection ? 'Express Interest' : 'Confirm Registration';
                     modalRegisterBtn.disabled = selectableCount === 0 && childCheckboxes.length === 0;
                     modalRegisterBtn.style.background = 'var(--accent)';
                 }
@@ -950,6 +1017,7 @@
 
         updateCalendarMonth(displayedDate);
     </script>
+    <script src="https://cdn.userway.org/widget.js" data-account="P05mbmczA2" data-position="3"></script>
 </body>
 </html>
 

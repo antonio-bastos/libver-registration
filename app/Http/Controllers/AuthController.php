@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
+use App\Services\MailingListService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -48,7 +49,7 @@ class AuthController extends Controller
         return view('auth.register');
     }
 
-    public function register(RegisterRequest $request): RedirectResponse
+    public function register(RegisterRequest $request, MailingListService $mailingListService): RedirectResponse
     {
         $data = $request->validated();
 
@@ -61,7 +62,13 @@ class AuthController extends Controller
             'phone' => $data['phone'],
             'card_number' => $data['card_number'],
             'dob' => $data['dob'],
+            'newsletter_subscribed' => !empty($data['subscribe_newsletter']),
+            'newsletter_subscribed_at' => !empty($data['subscribe_newsletter']) ? now() : null,
         ]);
+
+        if (!empty($data['subscribe_newsletter'])) {
+            $mailingListService->subscribeUser($user, 'account_registration');
+        }
 
         Auth::login($user);
 

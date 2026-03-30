@@ -4,7 +4,16 @@
 
 @section('content')
     <div class="top-bar">
-        <h1>User: {{ $user->name }} {{ $user->surname }}</h1>
+        <h1 style="display: flex; align-items: center; gap: 12px;">
+            @if(!empty($userImageUrl))
+                <img src="{{ $userImageUrl }}" alt="User image" style="width: 44px; height: 44px; border-radius: 999px; object-fit: cover;">
+            @else
+                <span style="width: 44px; height: 44px; border-radius: 999px; background: #e2e8f0; display: inline-flex; align-items: center; justify-content: center; color: #64748b;">
+                    <i class="fas fa-user"></i>
+                </span>
+            @endif
+            User: {{ $user->name }} {{ $user->surname }}
+        </h1>
         <a href="{{ route('admin.users.index') }}" class="btn btn-outline">
             <i class="fas fa-arrow-left"></i> Back to list
         </a>
@@ -81,13 +90,21 @@
                                     <th>Event</th>
                                     <th>Status</th>
                                     <th>Attendance</th>
+                                    <th>Fee Due</th>
                                     <th>Date</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($user->registrations as $reg)
                                 <tr>
-                                    <td>{{ $reg->activity->title }}</td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            @if(!empty($activityImageMap[$reg->activity_id]))
+                                                <img src="{{ $activityImageMap[$reg->activity_id] }}" alt="Activity image" style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover;">
+                                            @endif
+                                            {{ $reg->activity->title }}
+                                        </div>
+                                    </td>
                                     <td>
                                         <form action="{{ route('admin.registrations.status', $reg) }}" method="POST">
                                             @csrf
@@ -124,11 +141,31 @@
                                             </form>
                                         @endif
                                     </td>
+                                    <td>
+                                        <div>{{ number_format($reg->amount_paid, 2) }} / {{ number_format($reg->total_due, 2) }}</div>
+                                        <div style="font-size: 11px; color: var(--text-muted);">Outstanding: {{ number_format($reg->outstanding_amount, 2) }}</div>
+                                        @if($reg->absence_fine > 0)
+                                            <div style="font-size: 11px; color: var(--danger);">Absence fine: {{ number_format($reg->absence_fine, 2) }}</div>
+                                        @endif
+                                        <div style="margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap;">
+                                            @if($reg->payment_status !== 'paid')
+                                                <form action="{{ route('admin.registrations.mark_paid', $reg) }}" method="POST" style="display: inline;">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline" style="padding: 3px 7px; font-size: 10px; color: var(--success);">Mark Paid</button>
+                                                </form>
+                                            @else
+                                                <form action="{{ route('admin.registrations.mark_unpaid', $reg) }}" method="POST" style="display: inline;">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline" style="padding: 3px 7px; font-size: 10px; color: var(--warning);">Mark Unpaid</button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    </td>
                                     <td>{{ $reg->created_at->format('M d, Y') }}</td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="4" style="text-align: center; color: var(--text-muted);">No self-registrations found.</td>
+                                    <td colspan="5" style="text-align: center; color: var(--text-muted);">No self-registrations found.</td>
                                 </tr>
                                 @endforelse
                             </tbody>
@@ -139,7 +176,33 @@
                 <h4 style="margin-bottom: 16px;">Children & Their Registrations</h4>
                 @forelse($user->children as $child)
                     <div style="margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border);">
-                        <h4 style="margin-bottom: 12px;">{{ $child->first_name }} {{ $child->last_name }} ({{ $child->dob->age }} yrs)</h4>
+                        <h4 style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                            @if(!empty($childImageMap[$child->id]))
+                                <img src="{{ $childImageMap[$child->id] }}" alt="Child image" style="width: 36px; height: 36px; border-radius: 999px; object-fit: cover;">
+                            @else
+                                <span style="width: 36px; height: 36px; border-radius: 999px; background: #e2e8f0; display: inline-flex; align-items: center; justify-content: center; color: #64748b;">
+                                    <i class="fas fa-child"></i>
+                                </span>
+                            @endif
+                            {{ $child->first_name }} {{ $child->last_name }} ({{ $child->dob->age }} yrs)
+                        </h4>
+
+                        <div style="display: grid; grid-template-columns: 1fr auto; gap: 12px; margin-bottom: 12px;">
+                            <form action="{{ route('admin.children.update', $child) }}" method="POST" style="display: grid; grid-template-columns: 1fr 130px auto; gap: 10px;">
+                                @csrf
+                                <input type="text" name="tags" placeholder="Tags: allergies, learning support..." value="{{ implode(', ', $child->tags ?? []) }}">
+                                <input type="number" name="loyalty_points" min="0" value="{{ $child->loyalty_points }}" placeholder="Points">
+                                <button type="submit" class="btn btn-outline">Save Tags/Points</button>
+                            </form>
+                            <form action="{{ route('admin.children.clear_restriction', $child) }}" method="POST" onsubmit="return confirm('Clear current restriction and reset absence count?');">
+                                @csrf
+                                <button class="btn btn-outline" type="submit"><i class="fas fa-unlock"></i> Clear Restriction</button>
+                            </form>
+                        </div>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                            Current absence count: {{ $child->absence_count }} · Restriction:
+                            {{ $child->isRestricted() ? 'until ' . $child->restrictions_until->format('M d, Y') : 'none' }}
+                        </p>
                         
                         <div class="table-container">
                             <table style="background: var(--bg); border-radius: 8px;">
@@ -148,13 +211,21 @@
                                         <th>Event</th>
                                         <th>Status</th>
                                         <th>Attendance</th>
+                                        <th>Fee Due</th>
                                         <th>Date</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse($child->registrations as $reg)
                                     <tr>
-                                        <td>{{ $reg->activity->title }}</td>
+                                        <td>
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                @if(!empty($activityImageMap[$reg->activity_id]))
+                                                    <img src="{{ $activityImageMap[$reg->activity_id] }}" alt="Activity image" style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover;">
+                                                @endif
+                                                {{ $reg->activity->title }}
+                                            </div>
+                                        </td>
                                         <td>
                                             <form action="{{ route('admin.registrations.status', $reg) }}" method="POST">
                                                 @csrf
@@ -191,11 +262,31 @@
                                                 </form>
                                             @endif
                                         </td>
+                                        <td>
+                                            <div>{{ number_format($reg->amount_paid, 2) }} / {{ number_format($reg->total_due, 2) }}</div>
+                                            <div style="font-size: 11px; color: var(--text-muted);">Outstanding: {{ number_format($reg->outstanding_amount, 2) }}</div>
+                                            @if($reg->absence_fine > 0)
+                                                <div style="font-size: 11px; color: var(--danger);">Absence fine: {{ number_format($reg->absence_fine, 2) }}</div>
+                                            @endif
+                                            <div style="margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap;">
+                                                @if($reg->payment_status !== 'paid')
+                                                    <form action="{{ route('admin.registrations.mark_paid', $reg) }}" method="POST" style="display: inline;">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm btn-outline" style="padding: 3px 7px; font-size: 10px; color: var(--success);">Mark Paid</button>
+                                                    </form>
+                                                @else
+                                                    <form action="{{ route('admin.registrations.mark_unpaid', $reg) }}" method="POST" style="display: inline;">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm btn-outline" style="padding: 3px 7px; font-size: 10px; color: var(--warning);">Mark Unpaid</button>
+                                                    </form>
+                                                @endif
+                                            </div>
+                                        </td>
                                         <td>{{ $reg->created_at->format('M d, Y') }}</td>
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="4" style="text-align: center; color: var(--text-muted);">No registrations found.</td>
+                                        <td colspan="5" style="text-align: center; color: var(--text-muted);">No registrations found.</td>
                                     </tr>
                                     @endforelse
                                 </tbody>

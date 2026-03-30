@@ -18,6 +18,7 @@ class Child extends Model
         'absence_count',
         'tags',
         'loyalty_points',
+        'badges',
     ];
 
     protected $casts = [
@@ -26,6 +27,7 @@ class Child extends Model
         'tags' => 'array',
         'absence_count' => 'integer',
         'loyalty_points' => 'integer',
+        'badges' => 'array',
     ];
 
     public function parent(): BelongsTo
@@ -36,6 +38,11 @@ class Child extends Model
     public function registrations(): HasMany
     {
         return $this->hasMany(Registration::class);
+    }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(File::class, 'owner_id')->where('owner_type', 'child');
     }
 
     public function isRestricted(): bool

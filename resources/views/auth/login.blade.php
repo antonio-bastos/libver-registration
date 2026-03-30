@@ -1,6 +1,6 @@
 @extends('layouts.auth')
 
-@section('title', 'Login - Veria Central Public Library')
+@section('title', 'Login - Public Library of Veria')
 @section('width', '420px')
 
 @push('styles')

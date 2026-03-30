@@ -31,6 +31,7 @@ class Activity extends Model
         'connection_details',
         'requires_selection',
         'first_timers_only',
+        'is_space_booking',
         'materials_list',
         'custom_message_postpone',
         'certificate_template',
@@ -46,6 +47,7 @@ class Activity extends Model
         'numbered_seating' => 'bool',
         'requires_selection' => 'bool',
         'first_timers_only' => 'bool',
+        'is_space_booking' => 'bool',
         'reg_start_at' => 'datetime',
         'start_at' => 'datetime',
         'end_at' => 'datetime',
@@ -60,5 +62,10 @@ class Activity extends Model
     public function registrations(): HasMany
     {
         return $this->hasMany(Registration::class);
+    }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(File::class, 'owner_id')->where('owner_type', 'activity');
     }
 }

@@ -61,6 +61,30 @@
     </div>
 
     <div class="card">
+        <div style="display: flex; gap: 16px; align-items: flex-start;">
+            @if(!empty($activityImageUrl))
+                <img src="{{ $activityImageUrl }}" alt="Activity image" style="width: 88px; height: 88px; border-radius: 12px; object-fit: cover;">
+            @else
+                <span style="width: 88px; height: 88px; border-radius: 12px; background: #e2e8f0; display: inline-flex; align-items: center; justify-content: center; color: #64748b;">
+                    <i class="fas fa-image" style="font-size: 24px;"></i>
+                </span>
+            @endif
+            <div>
+                <div style="font-weight: 700; font-size: 18px;">{{ $activity->title }}</div>
+                <div style="font-size: 13px; color: var(--text-muted); margin-top: 5px;">
+                    {{ optional($activity->start_at)->format('M d, Y H:i') }} - {{ optional($activity->end_at)->format('H:i') }}
+                    · {{ $activity->location }}
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                    @if($activity->first_timers_only)<span class="badge badge-info">First Timers Only</span>@endif
+                    @if($activity->requires_selection)<span class="badge badge-warning">Selection Later</span>@endif
+                    @if($activity->is_space_booking)<span class="badge badge-success">Space Booking</span>@endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
         <h3 style="margin-bottom: 20px;">Registrations</h3>
         <div class="table-container">
             <table>
@@ -78,12 +102,24 @@
                     @foreach($registrations as $reg)
                     <tr>
                         <td>
-                            <div style="font-weight: 600;">
-                                @if($reg->child)
-                                    {{ $reg->child->first_name }} {{ $reg->child->last_name }}
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                @php
+                                    $participantImage = $reg->child ? ($childImageMap[$reg->child->id] ?? null) : ($userImageMap[$reg->user->id] ?? null);
+                                @endphp
+                                @if($participantImage)
+                                    <img src="{{ $participantImage }}" alt="Participant image" style="width: 40px; height: 40px; border-radius: 999px; object-fit: cover;">
                                 @else
-                                    {{ $reg->user->name }} {{ $reg->user->surname }} (Self)
+                                    <span style="width: 40px; height: 40px; border-radius: 999px; background: #e2e8f0; display: inline-flex; align-items: center; justify-content: center; color: #64748b;">
+                                        <i class="fas fa-user"></i>
+                                    </span>
                                 @endif
+                                <div style="font-weight: 600;">
+                                    @if($reg->child)
+                                        {{ $reg->child->first_name }} {{ $reg->child->last_name }}
+                                    @else
+                                        {{ $reg->user->name }} {{ $reg->user->surname }} (Self)
+                                    @endif
+                                </div>
                             </div>
                         </td>
                         <td>
@@ -102,7 +138,11 @@
                             @if($reg->position) <span style="font-size: 11px;">#{{ $reg->position }}</span> @endif
                         </td>
                         <td>
-                            {{ number_format($reg->amount_paid, 2) }} / {{ number_format($reg->fee_amount, 2) }}
+                            <div>{{ number_format($reg->amount_paid, 2) }} / {{ number_format($reg->total_due, 2) }}</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">Outstanding: {{ number_format($reg->outstanding_amount, 2) }}</div>
+                            @if($reg->absence_fine > 0)
+                                <div style="font-size: 11px; color: var(--danger);">Absence fine: {{ number_format($reg->absence_fine, 2) }}</div>
+                            @endif
                         </td>
                         <td>
                             @if($reg->attended)
@@ -162,6 +202,28 @@
         @if($registrations->isEmpty())
             <p style="text-align: center; color: var(--text-muted); padding: 40px;">No registrations found for this activity.</p>
         @endif
+    </div>
+
+    <div class="card">
+        <h3 style="margin-bottom: 16px;">Postpone Event & Notify Participants</h3>
+        <form action="{{ route('admin.activities.postpone', $activity) }}" method="POST" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            @csrf
+            <div>
+                <label for="start_at">New Start</label>
+                <input id="start_at" type="datetime-local" name="start_at" value="{{ old('start_at', optional($activity->start_at)->format('Y-m-d\TH:i')) }}" required>
+            </div>
+            <div>
+                <label for="end_at">New End</label>
+                <input id="end_at" type="datetime-local" name="end_at" value="{{ old('end_at', optional($activity->end_at)->format('Y-m-d\TH:i')) }}" required>
+            </div>
+            <div style="grid-column: 1 / -1;">
+                <label for="custom_message_postpone">Custom Email Message (optional)</label>
+                <textarea id="custom_message_postpone" name="custom_message_postpone" rows="3" placeholder="Optional explanation that will be sent to all participants.">{{ old('custom_message_postpone') }}</textarea>
+            </div>
+            <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end;">
+                <button class="btn btn-primary" type="submit"><i class="fas fa-envelope"></i> Postpone & Send Email Notifications</button>
+            </div>
+        </form>
     </div>
 
         <div style="display: flex; gap: 12px;">

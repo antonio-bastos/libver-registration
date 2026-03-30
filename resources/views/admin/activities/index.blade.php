@@ -44,6 +44,30 @@
                     @endforeach
                 </select>
             </div>
+            <div>
+                <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">First Timers</label>
+                <select name="first_timers">
+                    <option value="">Any</option>
+                    <option value="yes" {{ request('first_timers') === 'yes' ? 'selected' : '' }}>Only First Timers</option>
+                    <option value="no" {{ request('first_timers') === 'no' ? 'selected' : '' }}>Not Restricted</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Interest Mode</label>
+                <select name="interest_mode">
+                    <option value="">Any</option>
+                    <option value="selection" {{ request('interest_mode') === 'selection' ? 'selected' : '' }}>Selection Later</option>
+                    <option value="regular" {{ request('interest_mode') === 'regular' ? 'selected' : '' }}>Regular Capacity</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Space Booking</label>
+                <select name="space_booking">
+                    <option value="">Any</option>
+                    <option value="yes" {{ request('space_booking') === 'yes' ? 'selected' : '' }}>Space Booking</option>
+                    <option value="no" {{ request('space_booking') === 'no' ? 'selected' : '' }}>Standard</option>
+                </select>
+            </div>
             <div style="display: flex; align-items: flex-end;">
                 <button type="submit" class="btn btn-outline" style="width: 100%; justify-content: center;">Filter</button>
             </div>
@@ -61,66 +85,89 @@
                 </thead>
                 <tbody>
                     @foreach($activities as $activity)
-                    <tr style="{{ $activity->end_at->isPast() ? 'opacity: 0.7; background: #ffffff;' : '' }}">
-                        <td>
-                            <div style="font-weight: 600; font-size: 15px;">{{ $activity->title }}</div>
-                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
-                                <i class="far fa-calendar-alt"></i> {{ $activity->start_at->format('M d, Y H:i') }}
-                                <span style="margin: 0 4px;">•</span>
-                                <i class="fas fa-map-marker-alt"></i> {{ $activity->location }}
-                            </div>
-                            <div style="font-size: 11px; color: var(--primary); margin-top: 2px; font-weight: 600;">
-                                {{ $activity->type }}
-                            </div>
-                        </td>
-                        <td>
-                            @if($activity->end_at->isPast())
-                                <span class="badge" style="background: #e2e8f0; color: #475569;">Past</span>
-                            @elseif($activity->start_at->isFuture())
-                                <span class="badge badge-info">Upcoming</span>
-                            @else
-                                <span class="badge badge-success">Ongoing</span>
-                            @endif
+                        <tr style="{{ $activity->end_at->isPast() ? 'opacity: 0.7; background: #ffffff;' : '' }}">
+                            <td>
+                                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                                    @if(!empty($activityImageMap[$activity->id]))
+                                        <img src="{{ $activityImageMap[$activity->id] }}" alt="Activity image" style="width: 54px; height: 54px; border-radius: 10px; object-fit: cover;">
+                                    @else
+                                        <span style="width: 54px; height: 54px; border-radius: 10px; background: #e2e8f0; display: inline-flex; align-items: center; justify-content: center; color: #64748b;">
+                                            <i class="fas fa-image"></i>
+                                        </span>
+                                    @endif
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 15px;">{{ $activity->title }}</div>
+                                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+                                            <i class="far fa-calendar-alt"></i> {{ $activity->start_at->format('M d, Y H:i') }}
+                                            <span style="margin: 0 4px;">•</span>
+                                            <i class="fas fa-map-marker-alt"></i> {{ $activity->location }}
+                                        </div>
+                                        <div style="font-size: 11px; color: var(--primary); margin-top: 2px; font-weight: 600;">
+                                            {{ $activity->type }}
+                                        </div>
+                                        <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+                                            @if($activity->first_timers_only)
+                                                <span class="badge badge-info">First Timers Only</span>
+                                            @endif
+                                            @if($activity->requires_selection)
+                                                <span class="badge badge-warning">Selection Later</span>
+                                            @endif
+                                            @if($activity->is_space_booking)
+                                                <span class="badge badge-success">Space Booking</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                @if($activity->end_at->isPast())
+                                    <span class="badge" style="background: #e2e8f0; color: #475569;">Past</span>
+                                @elseif($activity->start_at->isFuture())
+                                    <span class="badge badge-info">Upcoming</span>
+                                @else
+                                    <span class="badge badge-success">Ongoing</span>
+                                @endif
 
-                            @if(!$activity->is_active)
-                                <span class="badge badge-warning" style="margin-top: 4px;">Draft</span>
-                            @endif
-                        </td>
-                        <td>
-                            <div style="font-weight: 600;">{{ $activity->registrations_count }} / {{ $activity->capacity }}</div>
-                            <div style="font-size: 11px; color: var(--text-muted);">Registered</div>
-                        </td>
-                        <td>
-                            <div style="display: flex; gap: 8px;">
-                                <a href="{{ route('admin.activities.show_details', $activity) }}" class="btn btn-sm btn-outline" title="Manage Registrations">
-                                    <i class="fas fa-users"></i>
-                                </a>
-                                <a href="{{ route('admin.activities.edit', $activity) }}" class="btn btn-sm btn-outline" title="Edit Event">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('admin.activities.duplicate', $activity) }}" method="POST" style="display: inline;">
-                                    @csrf
-                                    <button type="submit" class="btn btn-sm btn-outline" title="Duplicate Event">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                </form>
-                                <form action="{{ route('admin.activities.destroy', $activity) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this event? All sessions and registrations will be removed.')" style="display: inline;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-outline" style="color: var(--danger);" title="Delete Event">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
+                                @if(!$activity->is_active)
+                                    <span class="badge badge-warning" style="margin-top: 4px;">Draft</span>
+                                @endif
+                            </td>
+                            <td>
+                                <div style="font-weight: 600;">{{ $activity->registrations_count }} / {{ $activity->capacity }}</div>
+                                <div style="font-size: 11px; color: var(--text-muted);">Registered</div>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 8px;">
+                                    <a href="{{ route('admin.activities.show_details', $activity) }}" class="btn btn-sm btn-outline" title="Manage Registrations">
+                                        <i class="fas fa-users"></i>
+                                    </a>
+                                    <a href="{{ route('admin.activities.edit', $activity) }}" class="btn btn-sm btn-outline" title="Edit Event">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="{{ route('admin.activities.duplicate', $activity) }}" method="POST" style="display: inline;">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline" title="Duplicate Event">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </form>
+                                    <form action="{{ route('admin.activities.destroy', $activity) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this event? All sessions and registrations will be removed.')" style="display: inline;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline" style="color: var(--danger);" title="Delete Event">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
-        
+
         <div style="margin-top: 24px;">
             {{ $activities->appends(request()->query())->links() }}
         </div>
     </div>
 @endsection
+

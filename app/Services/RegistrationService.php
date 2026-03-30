@@ -13,15 +13,18 @@ class RegistrationService
     private DatabaseManager $db;
     private ConflictService $conflictService;
     private WaitlistService $waitlistService;
+    private NotificationService $notificationService;
 
     public function __construct(
         DatabaseManager $db,
         ConflictService $conflictService,
-        WaitlistService $waitlistService
+        WaitlistService $waitlistService,
+        NotificationService $notificationService
     ) {
         $this->db = $db;
         $this->conflictService = $conflictService;
         $this->waitlistService = $waitlistService;
+        $this->notificationService = $notificationService;
     }
 
     public function registerChild(int $activityId, int $childId, int $parentId, array $options = []): Registration
@@ -136,6 +139,12 @@ class RegistrationService
             'consent_media' => $options['consent_media'] ?? false,
         ]);
 
+        if ($registration->status === Registration::STATUS_CONFIRMED) {
+            $this->notificationService->queueRegistrationConfirmed($registration);
+        } elseif ($registration->status === Registration::STATUS_WAITING) {
+            $this->notificationService->queueWaitlistAdded($registration);
+        }
+
         return $registration;
     }
 
@@ -143,9 +152,10 @@ class RegistrationService
     {
         return $this->db->transaction(function () use ($registrationId, $canceledByUserId) {
             $registration = Registration::query()->whereKey($registrationId)->lockForUpdate()->firstOrFail();
+            $activity = Activity::query()->whereKey($registration->activity_id)->lockForUpdate()->first();
 
             $user = \App\Models\User::find($canceledByUserId);
-            if ($registration->user_id !== $canceledByUserId && $user->role === 'parent') {
+            if ($registration->user_id !== $canceledByUserId && (!$user || $user->role === 'parent')) {
                 throw new RuntimeException('Unauthorized to cancel this registration.');
             }
 
@@ -160,9 +170,20 @@ class RegistrationService
             $registration->canceled_at = now();
             $registration->save();
 
+            $promotedRegistration = null;
             if ($previousStatus === Registration::STATUS_CONFIRMED) {
-                $this->waitlistService->promoteNextIfAvailable($registration->activity_id);
+                $hasEnded = $activity?->end_at !== null && $activity->end_at->isPast();
+                if (!$hasEnded) {
+                    $offer = $this->waitlistService->promoteNextIfAvailable($registration->activity_id);
+                    if ($offer) {
+                        $promotedRegistration = Registration::query()
+                            ->with(['child', 'user'])
+                            ->find($offer->registration_id);
+                    }
+                }
             }
+
+            $this->notificationService->queueAdminCancellation($registration, $promotedRegistration);
 
             return $registration;
         });

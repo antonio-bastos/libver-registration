@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Child;
+use App\Models\File;
 use App\Models\Registration;
 use App\Services\AttendanceService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Illuminate\Support\Collection;
 
@@ -44,6 +46,32 @@ class DashboardController extends Controller
             ->unique()
             ->values();
 
+        $childIds = $children->pluck('id')->values();
+        $userImageUrl = File::query()
+            ->where('owner_type', 'user')
+            ->where('owner_id', $user->id)
+            ->latest('id')
+            ->value('storage_path');
+        $userImageUrl = $userImageUrl ? Storage::disk('public')->url($userImageUrl) : null;
+
+        $childImageMap = File::query()
+            ->where('owner_type', 'child')
+            ->whereIn('owner_id', $childIds)
+            ->orderByDesc('id')
+            ->get(['owner_id', 'storage_path'])
+            ->unique('owner_id')
+            ->mapWithKeys(fn ($file) => [(int) $file->owner_id => Storage::disk('public')->url($file->storage_path)])
+            ->all();
+
+        $activityImageMap = File::query()
+            ->where('owner_type', 'activity')
+            ->whereIn('owner_id', $activityIds)
+            ->orderByDesc('id')
+            ->get(['owner_id', 'storage_path'])
+            ->unique('owner_id')
+            ->mapWithKeys(fn ($file) => [(int) $file->owner_id => Storage::disk('public')->url($file->storage_path)])
+            ->all();
+
         $confirmedByActivity = collect();
         $waitingByActivity = collect();
 
@@ -63,8 +91,8 @@ class DashboardController extends Controller
                 ->groupBy('activity_id');
         }
 
-        $formatRegistrations = function (Collection $regs) use ($confirmedByActivity, $waitingByActivity) {
-            return $regs->map(function (Registration $registration) use ($confirmedByActivity, $waitingByActivity) {
+        $formatRegistrations = function (Collection $regs) use ($confirmedByActivity, $waitingByActivity, $activityImageMap) {
+            return $regs->map(function (Registration $registration) use ($confirmedByActivity, $waitingByActivity, $activityImageMap) {
                 $activity = $registration->activity;
                 $capacity = $activity?->capacity;
                 $statusLabel = 'Pending';
@@ -82,6 +110,9 @@ class DashboardController extends Controller
                     $position = $positionIndex === false ? $registration->position : $positionIndex + 1;
                     $statusState = 'waiting';
                     $statusLabel = $position ? 'Waitlist ' . $position : 'Waitlist';
+                } elseif ($registration->status === Registration::STATUS_PENDING_APPROVAL) {
+                    $statusState = 'pending';
+                    $statusLabel = 'Interest submitted';
                 }
 
                 $qrCodeData = null;
@@ -95,6 +126,7 @@ class DashboardController extends Controller
                     'status_label' => $statusLabel,
                     'status_state' => $statusState,
                     'qr_code_data' => $qrCodeData,
+                    'activity_image_url' => $activityImageMap[$registration->activity_id] ?? null,
                 ];
             })->values();
         };
@@ -114,6 +146,8 @@ class DashboardController extends Controller
         return view('dashboard', [
             'children' => $childCards,
             'selfCard' => $selfCard,
+            'userImageUrl' => $userImageUrl,
+            'childImageMap' => $childImageMap,
         ]);
     }
 }

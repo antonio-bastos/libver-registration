@@ -52,7 +52,7 @@
 <div class="nav">
     <div class="brand">
         <a href="{{ route('home') }}" style="text-decoration: none; color: inherit;">
-            <i class="fas fa-book"></i> Veria Central Public Library
+            <i class="fas fa-book"></i> Public Library of Veria
         </a>
     </div>
     <div class="nav-links">

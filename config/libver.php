@@ -2,6 +2,7 @@
 
 return [
     'waitlist_offer_ttl_minutes' => 120,
+    'public_api_token' => env('LIBVER_PUBLIC_API_TOKEN'),
 
     /*
     |--------------------------------------------------------------------------
@@ -24,4 +25,15 @@ return [
     |
     */
     'unreported_absence_fine' => 5.00,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Loyalty Rewards
+    |--------------------------------------------------------------------------
+    */
+    'loyalty_points_per_attendance' => 10,
+    'reward_badges' => [
+        'Library Friend' => 50,
+        'Young Scientist' => 100,
+    ],
 ];

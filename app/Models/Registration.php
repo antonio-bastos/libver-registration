@@ -30,6 +30,8 @@ class Registration extends Model
         'amount_paid',
         'currency',
         'payment_metadata',
+        'receipt_sent_at',
+        'invoice_generated_at',
         'consent_media',
         'canceled_by',
         'canceled_at',
@@ -47,6 +49,8 @@ class Registration extends Model
         'fee_amount' => 'decimal:2',
         'amount_paid' => 'decimal:2',
         'payment_metadata' => 'array',
+        'receipt_sent_at' => 'datetime',
+        'invoice_generated_at' => 'datetime',
         'canceled_at' => 'datetime',
         'checked_in_at' => 'datetime',
         'attended_at' => 'datetime',
@@ -68,5 +72,24 @@ class Registration extends Model
     {
         return $this->belongsTo(Child::class);
     }
+
+    public function getAbsenceFineAttribute(): float
+    {
+        $metadata = $this->payment_metadata ?? [];
+        $fine = $metadata['absence_fine'] ?? 0;
+
+        return (float) $fine;
+    }
+
+    public function getTotalDueAttribute(): float
+    {
+        return (float) $this->fee_amount + $this->absence_fine;
+    }
+
+    public function getOutstandingAmountAttribute(): float
+    {
+        $outstanding = $this->total_due - (float) $this->amount_paid;
+
+        return $outstanding > 0 ? $outstanding : 0.0;
+    }
 }
-#ss

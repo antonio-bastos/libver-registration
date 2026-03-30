@@ -28,6 +28,25 @@
                     </p>
                 </div>
 
+                @if($activity->online_url || $activity->live_stream_url || $activity->connection_details)
+                    <div style="background: #ecfeff; border-radius: 12px; border: 1px solid #bae6fd; padding: 16px 20px; margin-bottom: 24px;">
+                        <p style="margin: 0 0 8px; font-size: 14px; color: #0f172a; font-weight: 700;">Online Connection Details</p>
+                        <p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.6;">
+                            @if($activity->online_url)
+                                <strong>Online URL:</strong>
+                                <a href="{{ $activity->online_url }}" target="_blank">{{ $activity->online_url }}</a><br>
+                            @endif
+                            @if($activity->live_stream_url)
+                                <strong>Live Stream:</strong>
+                                <a href="{{ $activity->live_stream_url }}" target="_blank">{{ $activity->live_stream_url }}</a><br>
+                            @endif
+                            @if($activity->connection_details)
+                                <strong>Instructions:</strong> {{ $activity->connection_details }}
+                            @endif
+                        </p>
+                    </div>
+                @endif
+
                 <p style="margin: 0 0 12px; font-size: 15px;">Add the session to your calendar:</p>
                 <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 32px;">
                     @if($googleCalendarUrl)

@@ -4,18 +4,23 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Activity;
+use App\Models\File;
 use App\Models\Registration;
+use App\Services\AttendanceService;
 use App\Services\WaitlistService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminActivityController extends Controller
 {
     private WaitlistService $waitlistService;
+    private AttendanceService $attendanceService;
 
-    public function __construct(WaitlistService $waitlistService)
+    public function __construct(WaitlistService $waitlistService, AttendanceService $attendanceService)
     {
         $this->waitlistService = $waitlistService;
+        $this->attendanceService = $attendanceService;
     }
 
     public function show(Activity $activity)
@@ -27,7 +32,32 @@ class AdminActivityController extends Controller
             ->orderBy('position')
             ->get();
 
-        return view('admin.activities.show', compact('activity', 'registrations'));
+        $activityImagePath = File::query()
+            ->where('owner_type', 'activity')
+            ->where('owner_id', $activity->id)
+            ->latest('id')
+            ->value('storage_path');
+        $activityImageUrl = $activityImagePath ? Storage::disk('public')->url($activityImagePath) : null;
+
+        $childImageMap = File::query()
+            ->where('owner_type', 'child')
+            ->whereIn('owner_id', $registrations->pluck('child_id')->filter()->values())
+            ->orderByDesc('id')
+            ->get(['owner_id', 'storage_path'])
+            ->unique('owner_id')
+            ->mapWithKeys(fn ($file) => [(int) $file->owner_id => Storage::disk('public')->url($file->storage_path)])
+            ->all();
+
+        $userImageMap = File::query()
+            ->where('owner_type', 'user')
+            ->whereIn('owner_id', $registrations->pluck('user_id')->filter()->values())
+            ->orderByDesc('id')
+            ->get(['owner_id', 'storage_path'])
+            ->unique('owner_id')
+            ->mapWithKeys(fn ($file) => [(int) $file->owner_id => Storage::disk('public')->url($file->storage_path)])
+            ->all();
+
+        return view('admin.activities.show', compact('activity', 'registrations', 'activityImageUrl', 'childImageMap', 'userImageMap'));
     }
 
     public function promote(Registration $registration)
@@ -40,10 +70,10 @@ class AdminActivityController extends Controller
     public function markAsPaid(Registration $registration)
     {
         $registration->payment_status = Registration::PAYMENT_STATUS_PAID;
-        $registration->amount_paid = $registration->fee_amount;
+        $registration->amount_paid = $registration->total_due;
         $meta = $registration->payment_metadata ?? [];
         $meta[] = [
-            'amount' => $registration->fee_amount,
+            'amount' => $registration->total_due,
             'date' => now()->toIso8601String(),
             'reference' => 'ADMIN-MANUAL',
         ];
@@ -75,10 +105,7 @@ class AdminActivityController extends Controller
                 return response()->json(['success' => false, 'message' => 'Already marked as attended.']);
             }
 
-            $registration->attended = true;
-            $registration->attended_at = now();
-            $registration->checked_in_at = now();
-            $registration->save();
+            $this->attendanceService->markAttended($registration);
 
             return response()->json([
                 'success' => true, 

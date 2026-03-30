@@ -182,6 +182,7 @@
             font-weight: 500;
         }
         .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
 
         .top-bar {
             display: flex;
@@ -203,7 +204,22 @@
             <a href="{{ route('admin.activities.index') }}" class="admin-nav-link {{ request()->routeIs('admin.activities.*') ? 'active' : '' }}">
                 <i class="fas fa-calendar-alt"></i> Events
             </a>
+            <a href="{{ route('admin.activities.archived') }}" class="admin-nav-link {{ request()->routeIs('admin.activities.archived') ? 'active' : '' }}">
+                <i class="fas fa-box-archive"></i> Archive
+            </a>
+            <a href="{{ route('admin.analytics') }}" class="admin-nav-link {{ request()->routeIs('admin.analytics') ? 'active' : '' }}">
+                <i class="fas fa-chart-column"></i> Insights
+            </a>
+            <a href="{{ route('admin.search') }}" class="admin-nav-link {{ request()->routeIs('admin.search') ? 'active' : '' }}">
+                <i class="fas fa-search"></i> Search
+            </a>
+            <a href="{{ route('admin.checkin.tablet') }}" class="admin-nav-link {{ request()->routeIs('admin.checkin.tablet*') ? 'active' : '' }}">
+                <i class="fas fa-tablet-alt"></i> Tablet Check-in
+            </a>
             @if(auth()->user()->role === 'admin')
+            <a href="{{ route('admin.blacklist.index') }}" class="admin-nav-link {{ request()->routeIs('admin.blacklist.*') ? 'active' : '' }}">
+                <i class="fas fa-user-slash"></i> Blacklist
+            </a>
             <a href="{{ route('admin.users.index') }}" class="admin-nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                 <i class="fas fa-users"></i> Users
             </a>
@@ -217,8 +233,14 @@
                 <i class="fas fa-check-circle"></i> {{ session('success') }}
             </div>
         @endif
+        @if($errors->any())
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-triangle"></i> {{ $errors->first() }}
+            </div>
+        @endif
 
         @yield('content')
     </main>
+    <script src="https://cdn.userway.org/widget.js" data-account="P05mbmczA2" data-position="3"></script>
 </body>
 </html>

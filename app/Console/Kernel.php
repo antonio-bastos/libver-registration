@@ -14,6 +14,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('activities:archive')->daily();
 
         $schedule->command('libver:expire-waitlist-offers')->everyFiveMinutes();
+
+        $schedule->command('activities:send-reminders')->hourly();
     }
 
     protected function commands(): void

@@ -17,6 +17,8 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'newsletter_subscribed',
+        'newsletter_subscribed_at',
         'phone',
         'card_number',
         'dob',
@@ -29,6 +31,8 @@ class User extends Authenticatable
 
     protected $casts = [
         'dob' => 'date',
+        'newsletter_subscribed' => 'boolean',
+        'newsletter_subscribed_at' => 'datetime',
     ];
 
     public function children(): HasMany
@@ -39,5 +43,10 @@ class User extends Authenticatable
     public function registrations(): HasMany
     {
         return $this->hasMany(Registration::class);
+    }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(File::class, 'owner_id')->where('owner_type', 'user');
     }
 }

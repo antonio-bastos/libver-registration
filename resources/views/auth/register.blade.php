@@ -1,6 +1,6 @@
 @extends('layouts.auth')
 
-@section('title', 'Register - Veria Central Public Library')
+@section('title', 'Register - Public Library of Veria')
 @section('width', '600px')
 
 @push('styles')
@@ -349,6 +349,13 @@
                     <div class="field-error"><i class="fas fa-exclamation-circle"></i> {{ $message }}</div>
                 @enderror
             </div>
+        </div>
+
+        <div class="form-row full" style="margin-bottom: 10px;">
+            <label style="display: flex; align-items: center; gap: 10px; font-weight: 500;">
+                <input type="checkbox" name="subscribe_newsletter" value="1" {{ old('subscribe_newsletter') ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                Subscribe me to the mailing list for activity updates.
+            </label>
         </div>
 
         <div class="form-actions" style="margin-top: 40px;">

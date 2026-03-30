@@ -30,6 +30,7 @@ class RegisterRequest extends FormRequest
             'phone' => ['required', 'string', 'max:40', 'regex:/^(\+30)?\s?(69\d{8}|2\d{9})$/'], // Greek mobile or landline
             'card_number' => ['nullable', 'string', 'max:60'],
             'dob' => ['required', 'date', 'before:tomorrow'],
+            'subscribe_newsletter' => ['nullable', 'boolean'],
         ];
     }
 

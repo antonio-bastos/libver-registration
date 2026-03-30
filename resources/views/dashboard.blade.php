@@ -236,6 +236,15 @@
             <div class="grid-col-1">
                 <div class="card">
                     <h3 class="card-title"><i class="fas fa-user-circle"></i> My Account</h3>
+                    <div style="display: flex; justify-content: center; margin-bottom: 16px;">
+                        @if(!empty($userImageUrl))
+                            <img src="{{ $userImageUrl }}" alt="Profile image" style="width: 74px; height: 74px; border-radius: 999px; object-fit: cover;">
+                        @else
+                            <span style="width: 74px; height: 74px; border-radius: 999px; background: #e2e8f0; display: inline-flex; align-items: center; justify-content: center; color: #64748b;">
+                                <i class="fas fa-user" style="font-size: 30px;"></i>
+                            </span>
+                        @endif
+                    </div>
                     <form action="#" method="POST">
                         @csrf
                         <div class="form-group">
@@ -261,7 +270,16 @@
                     <div style="flex: 1;">
                         @forelse($children as $card)
                             <div class="child-header">
-                                <span class="child-name">{{ $card['child']->first_name }} {{ $card['child']->last_name }}</span>
+                                <span class="child-name" style="display: flex; align-items: center; gap: 8px;">
+                                    @if(!empty($childImageMap[$card['child']->id]))
+                                        <img src="{{ $childImageMap[$card['child']->id] }}" alt="Child image" style="width: 28px; height: 28px; border-radius: 999px; object-fit: cover;">
+                                    @else
+                                        <span style="width: 28px; height: 28px; border-radius: 999px; background: #e2e8f0; display: inline-flex; align-items: center; justify-content: center; color: #64748b;">
+                                            <i class="fas fa-child"></i>
+                                        </span>
+                                    @endif
+                                    {{ $card['child']->first_name }} {{ $card['child']->last_name }}
+                                </span>
                                 <form action="{{ route('children.destroy', $card['child']->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this family member?')">
                                     @csrf
                                     @method('DELETE')
@@ -293,6 +311,9 @@
                     @foreach($selfCard['registrations'] as $item)
                         <div class="registration-item">
                             <div class="event-info">
+                                @if(!empty($item['activity_image_url']))
+                                    <img src="{{ $item['activity_image_url'] }}" alt="Activity image" style="width: 64px; height: 42px; border-radius: 8px; object-fit: cover; margin-bottom: 6px;">
+                                @endif
                                 <h4>{{ $item['activity']?->title ?? 'Activity' }}</h4>
                                 <p><i class="far fa-clock"></i> {{ $item['activity']?->start_at?->format('M d, Y @ H:i') ?? 'TBA' }}</p>
                                 <p><i class="fas fa-map-marker-alt"></i> {{ $item['activity']?->location ?? 'Main Library' }}</p>
@@ -326,6 +347,9 @@
                         @foreach($card['registrations'] as $item)
                             <div class="registration-item">
                                 <div class="event-info">
+                                    @if(!empty($item['activity_image_url']))
+                                        <img src="{{ $item['activity_image_url'] }}" alt="Activity image" style="width: 64px; height: 42px; border-radius: 8px; object-fit: cover; margin-bottom: 6px;">
+                                    @endif
                                     <h4>{{ $item['activity']?->title ?? 'Activity' }}</h4>
                                     <p><i class="far fa-clock"></i> {{ $item['activity']?->start_at?->format('M d, Y @ H:i') ?? 'TBA' }}</p>
                                     <p><i class="fas fa-map-marker-alt"></i> {{ $item['activity']?->location ?? 'Main Library' }}</p>
@@ -365,7 +389,7 @@
         <div class="modal-card">
             <i class="fas fa-times modal-close" onclick="closeQRModal()"></i>
             <h3 id="qr-event-title" style="margin-bottom: 8px; font-size: 20px;">Event Check-in</h3>
-            <p style="color: var(--text-muted); font-size: 14px;">Show this QR code to the event staff</p>
+            <p style="color: var(--text-muted); font-size: 14px;">Use this QR at self check-in tablet mode or show it to event staff</p>
             <div id="qrcode-container">
                 <div id="qrcode"></div>
             </div>
@@ -430,5 +454,6 @@
             }
         });
     </script>
+    <script src="https://cdn.userway.org/widget.js" data-account="P05mbmczA2" data-position="3"></script>
 </body>
 </html>

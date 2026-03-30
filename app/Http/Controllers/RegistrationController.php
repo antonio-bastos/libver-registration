@@ -2,20 +2,28 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Registration;
+use App\Services\MailingListService;
 use App\Services\RegistrationService;
+use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 
 class RegistrationController extends Controller
 {
-    public function store(Request $request, RegistrationService $registrationService)
+    public function store(
+        Request $request,
+        RegistrationService $registrationService,
+        MailingListService $mailingListService
+    )
     {
         $data = $request->validate([
             'activity_id' => ['required', 'integer'],
             'register_self' => ['nullable', 'boolean'],
             'child_ids' => ['nullable', 'array'],
             'child_ids.*' => ['integer'],
+            'newsletter_opt_in' => ['nullable', 'boolean'],
         ]);
 
         $childIds = $data['child_ids'] ?? [];
@@ -58,6 +66,15 @@ class RegistrationController extends Controller
             return back()->withErrors(['registration' => $errors[0]]);
         }
 
+        if ($request->has('newsletter_opt_in') && !$request->user()->newsletter_subscribed) {
+            $user = $request->user();
+            $user->newsletter_subscribed = true;
+            $user->newsletter_subscribed_at = now();
+            $user->save();
+
+            $mailingListService->subscribeUser($user, 'event_registration');
+        }
+
         if ($request->expectsJson()) {
             return response()->json([
                 'registrations' => $registrations,
@@ -95,5 +112,44 @@ class RegistrationController extends Controller
         }
 
         return back()->with('success', 'Registration cancelled.');
+    }
+
+    public function calendar(Request $request, Registration $registration): Response
+    {
+        if (!$request->hasValidSignature()) {
+            abort(403);
+        }
+
+        $registration->load(['activity', 'child', 'user']);
+        $activity = $registration->activity;
+        abort_if(!$activity || !$activity->start_at, 404);
+
+        $startUtc = $activity->start_at->copy()->utc()->format('Ymd\THis\Z');
+        $endUtc = ($activity->end_at?->copy()->utc() ?? $activity->start_at->copy()->addHour()->utc())->format('Ymd\THis\Z');
+        $summary = addcslashes($activity->title, ",;");
+        $description = addcslashes(strip_tags((string) $activity->description_html), ",;\n");
+        $location = addcslashes((string) ($activity->location ?? ''), ",;");
+
+        $ics = implode("\r\n", [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//LibVer//Registration//EN',
+            'BEGIN:VEVENT',
+            'UID:registration-' . $registration->id . '@libver.local',
+            'DTSTAMP:' . now()->utc()->format('Ymd\THis\Z'),
+            'DTSTART:' . $startUtc,
+            'DTEND:' . $endUtc,
+            'SUMMARY:' . $summary,
+            'DESCRIPTION:' . $description,
+            'LOCATION:' . $location,
+            'END:VEVENT',
+            'END:VCALENDAR',
+            '',
+        ]);
+
+        return response($ics, 200, [
+            'Content-Type' => 'text/calendar; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="activity-' . $activity->id . '.ics"',
+        ]);
     }
 }

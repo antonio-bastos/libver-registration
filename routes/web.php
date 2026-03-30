@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminActivityController;
+use App\Http\Controllers\Admin\AdminChildController;
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\GlobalSearchController;
 use App\Http\Controllers\Admin\AdminUsersController;
 use App\Http\Controllers\Admin\AttendanceController;
 use App\Http\Controllers\AuthController;
@@ -13,6 +16,12 @@ use App\Http\Controllers\WaitlistController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/registrations/{registration}/calendar', [RegistrationController::class, 'calendar'])
+    ->middleware('signed')
+    ->name('registrations.calendar');
+Route::get('/check-in/kiosk/{token}', [AttendanceController::class, 'kioskEntry'])->name('checkin.kiosk.entry');
+Route::post('/check-in/kiosk/{token}/phone', [AttendanceController::class, 'kioskCheckInByPhone'])->name('checkin.kiosk.phone');
+Route::post('/check-in/kiosk/{token}/token', [AttendanceController::class, 'kioskCheckInByToken'])->name('checkin.kiosk.token');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -44,27 +53,39 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::middleware(['auth', 'role:admin,instructor'])->prefix('admin')->group(function () {
-    Route::get('/dashboard', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'index'])->name('admin.dashboard');
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+    Route::get('/analytics', [AdminDashboardController::class, 'analytics'])->name('admin.analytics');
+    Route::get('/search', [GlobalSearchController::class, 'index'])->name('admin.search');
 
     Route::middleware('role:admin')->group(function () {
-        Route::get('/users', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'users'])->name('admin.users.index');
-        Route::get('/users/{user}', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'showUser'])->name('admin.users.show');
-        Route::post('/users/{user}', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'updateUser'])->name('admin.users.update');
-        Route::post('/users/{user}/role', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'updateUserRole'])->name('admin.users.role');
-        Route::post('/registrations/{registration}/status', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'updateRegistrationStatus'])->name('admin.registrations.status');
-        Route::get('/stats', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'stats'])->name('admin.stats');
+        Route::get('/users', [AdminDashboardController::class, 'users'])->name('admin.users.index');
+        Route::get('/blacklist', [AdminDashboardController::class, 'blacklist'])->name('admin.blacklist.index');
+        Route::get('/users/{user}', [AdminDashboardController::class, 'showUser'])->name('admin.users.show');
+        Route::post('/users/{user}', [AdminDashboardController::class, 'updateUser'])->name('admin.users.update');
+        Route::post('/users/{user}/role', [AdminDashboardController::class, 'updateUserRole'])->name('admin.users.role');
+        Route::post('/registrations/{registration}/status', [AdminDashboardController::class, 'updateRegistrationStatus'])->name('admin.registrations.status');
+        Route::get('/stats', [AdminDashboardController::class, 'stats'])->name('admin.stats');
         Route::post('/users/admin', [AdminUsersController::class, 'store'])->name('admin.users.store');
+        Route::post('/children/{child}', [AdminChildController::class, 'update'])->name('admin.children.update');
+        Route::post('/children/{child}/clear-restriction', [AdminChildController::class, 'clearRestriction'])->name('admin.children.clear_restriction');
+        Route::post('/blacklist/{child}/restrict', [AdminDashboardController::class, 'restrictChild'])->name('admin.blacklist.restrict');
+        Route::post('/system/backup', [AdminDashboardController::class, 'backupNow'])->name('admin.system.backup');
+        Route::post('/system/restore-latest', [AdminDashboardController::class, 'restoreLatestBackup'])->name('admin.system.restore_latest');
     });
 
-    Route::get('/activities', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'activities'])->name('admin.activities.index');
-    Route::get('/activities/create', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'createActivity'])->name('admin.activities.create');
-    Route::post('/activities', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'storeActivity'])->name('admin.activities.store');
-    Route::get('/activities/{activity}/edit', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'editActivity'])->name('admin.activities.edit');
-    Route::put('/activities/{activity}', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'updateActivity'])->name('admin.activities.update');
-    Route::delete('/activities/{activity}', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'destroyActivity'])->name('admin.activities.destroy');
-    Route::post('/activities/{activity}/duplicate', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'duplicate'])->name('admin.activities.duplicate');
+    Route::get('/activities', [AdminDashboardController::class, 'activities'])->name('admin.activities.index');
+    Route::get('/activities/archive', [AdminDashboardController::class, 'archivedActivities'])->name('admin.activities.archived');
+    Route::get('/activities/create', [AdminDashboardController::class, 'createActivity'])->name('admin.activities.create');
+    Route::post('/activities', [AdminDashboardController::class, 'storeActivity'])->name('admin.activities.store');
+    Route::get('/activities/{activity}/edit', [AdminDashboardController::class, 'editActivity'])->name('admin.activities.edit');
+    Route::put('/activities/{activity}', [AdminDashboardController::class, 'updateActivity'])->name('admin.activities.update');
+    Route::delete('/activities/{activity}', [AdminDashboardController::class, 'destroyActivity'])->name('admin.activities.destroy');
+    Route::post('/activities/{activity}/duplicate', [AdminDashboardController::class, 'duplicate'])->name('admin.activities.duplicate');
+    Route::post('/activities/{activity}/postpone', [AdminDashboardController::class, 'postpone'])->name('admin.activities.postpone');
 
     Route::get('/check-in/{token}', [AttendanceController::class, 'scan'])->name('admin.checkin.scan');
+    Route::get('/check-in/tablet', [AttendanceController::class, 'tabletIndex'])->name('admin.checkin.tablet');
+    Route::get('/check-in/tablet/{activity}/public', [AttendanceController::class, 'tabletPublic'])->name('admin.checkin.tablet_public');
     Route::post('/registrations/{registration}/absent', [AttendanceController::class, 'markAbsent'])->name('admin.registrations.absent');
     Route::post('/registrations/{registration}/unmark-attendance', [AttendanceController::class, 'unmarkAttendance'])->name('admin.registrations.unmark_attendance');
 

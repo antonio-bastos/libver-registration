@@ -8,6 +8,13 @@ use Carbon\Carbon;
 
 class AttendanceService
 {
+    private RewardService $rewardService;
+
+    public function __construct(RewardService $rewardService)
+    {
+        $this->rewardService = $rewardService;
+    }
+
     /**
      * Generates a secure token for QR code encoding.
      */
@@ -31,17 +38,27 @@ class AttendanceService
     {
         $registration = Registration::where('check_in_token', $token)->firstOrFail();
 
-        if ($registration->checked_in_at) {
+        if ($registration->checked_in_at || $registration->attended === true) {
             return $registration; // Already checked in
+        }
+
+        $this->markAttended($registration);
+
+        return $registration;
+    }
+
+    public function markAttended(Registration $registration): void
+    {
+        if ($registration->attended === true) {
+            return;
         }
 
         $registration->checked_in_at = now();
         $registration->attended_at = now();
         $registration->attended = true;
-        
         $registration->save();
 
-        return $registration;
+        $this->rewardService->awardForAttendance($registration);
     }
 
     /**
