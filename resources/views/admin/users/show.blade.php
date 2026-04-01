@@ -19,12 +19,6 @@
         </a>
     </div>
 
-    @if(session('success'))
-        <div class="alert alert-success" style="margin-bottom: 20px; padding: 15px; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 4px;">
-            {{ session('success') }}
-        </div>
-    @endif
-
     <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
         <div>
             <div class="card">
