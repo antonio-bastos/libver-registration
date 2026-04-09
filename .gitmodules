@@ -1,0 +1,4 @@
+[submodule "libver-smtp"]
+	path = libver-smtp
+	url = https://github.com/antonio-bastos/libver-smtp.git
+	branch = main
