@@ -25,14 +25,14 @@ Route::post('/check-in/kiosk/{token}/token', [AttendanceController::class, 'kios
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('login.submit');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:15,15')->name('login.submit');
     Route::get('/registration', [AuthController::class, 'showRegistrationForm'])->name('register');
-    Route::post('/registration', [AuthController::class, 'register'])->middleware('throttle:10,1')->name('register.submit');
+    Route::post('/registration', [AuthController::class, 'register'])->middleware('throttle:10,60')->name('register.submit');
 
     Route::get('/forgot-password', [\App\Http\Controllers\PasswordResetController::class, 'showLinkRequestForm'])->name('password.request');
-    Route::post('/forgot-password', [\App\Http\Controllers\PasswordResetController::class, 'sendResetLinkEmail'])->middleware('throttle:6,1')->name('password.email');
+    Route::post('/forgot-password', [\App\Http\Controllers\PasswordResetController::class, 'sendResetLinkEmail'])->middleware('throttle:5,60')->name('password.email');
     Route::get('/reset-password/{token}', [\App\Http\Controllers\PasswordResetController::class, 'showResetForm'])->name('password.reset');
-    Route::post('/reset-password', [\App\Http\Controllers\PasswordResetController::class, 'reset'])->name('password.update');
+    Route::post('/reset-password', [\App\Http\Controllers\PasswordResetController::class, 'reset'])->middleware('throttle:5,60')->name('password.update');
 });
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 

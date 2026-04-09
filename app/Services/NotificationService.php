@@ -260,7 +260,7 @@ class NotificationService
             return;
         }
 
-        Mail::send('emails.account_created', [
+        Mail::queue('emails.account_created', [
             'user' => $user,
         ], function ($message) use ($user) {
             $message
@@ -279,7 +279,7 @@ class NotificationService
         $calendarLinks = $this->buildCalendarLinks($registration);
         $recipientName = trim($registration->user->name . ' ' . $registration->user->surname);
 
-        Mail::send('emails.registration_confirmed', [
+        Mail::queue('emails.registration_confirmed', [
             'registration' => $registration,
             'activity' => $registration->activity,
             'child' => $registration->child,
@@ -299,7 +299,7 @@ class NotificationService
             return;
         }
 
-        Mail::send('emails.waitlist_added', [
+        Mail::queue('emails.waitlist_added', [
             'registration' => $registration,
             'activity' => $registration->activity,
             'child' => $registration->child,
@@ -326,7 +326,7 @@ class NotificationService
         $acceptUrl = route('waitlist.accept', ['token' => $token]);
         $declineUrl = route('waitlist.decline', ['token' => $token]);
 
-        Mail::send('emails.waitlist_offer', [
+        Mail::queue('emails.waitlist_offer', [
             'registration' => $registration,
             'activity' => $registration->activity,
             'child' => $registration->child,
@@ -373,7 +373,7 @@ class NotificationService
                 ->find((int) $payload['promoted_registration_id']);
         }
 
-        Mail::send('emails.admin_cancellation', [
+        Mail::queue('emails.admin_cancellation', [
             'registration' => $registration,
             'activity' => $registration->activity,
             'canceledBy' => $canceledBy,
@@ -393,7 +393,7 @@ class NotificationService
             return;
         }
 
-        Mail::send('emails.activity_reminder', [
+        Mail::queue('emails.activity_reminder', [
             'registration' => $registration,
             'activity' => $registration->activity,
             'child' => $registration->child,
@@ -413,7 +413,7 @@ class NotificationService
 
         $payload = $this->payload($notification);
 
-        Mail::send('emails.activity_postponed', [
+        Mail::queue('emails.activity_postponed', [
             'registration' => $registration,
             'activity' => $registration->activity,
             'child' => $registration->child,

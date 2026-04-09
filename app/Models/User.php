@@ -4,9 +4,14 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Notifications\ResetPassword;
 
 class User extends Authenticatable
 {
+    use Notifiable, HasFactory;
+
     public const ROLE_ADMIN = 'admin';
     public const ROLE_INSTRUCTOR = 'instructor';
     public const ROLE_PARENT = 'parent';
@@ -20,7 +25,6 @@ class User extends Authenticatable
         'newsletter_subscribed',
         'newsletter_subscribed_at',
         'phone',
-        'card_number',
         'dob',
     ];
 
@@ -48,5 +52,16 @@ class User extends Authenticatable
     public function files(): HasMany
     {
         return $this->hasMany(File::class, 'owner_id')->where('owner_type', 'user');
+    }
+
+    /**
+     * Send a password reset notification to the user.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new ResetPassword($token));
     }
 }

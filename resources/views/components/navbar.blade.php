@@ -36,11 +36,19 @@
         border: none;
         cursor: pointer;
         font-family: inherit;
-        padding: 0;
+        padding: 6px 8px;
+        border-radius: 4px;
+        outline: 2px solid transparent;
+        outline-offset: 2px;
     }
 
     .nav-link:hover, .nav-links a:hover {
         color: var(--primary) !important;
+    }
+
+    .nav-link:focus, .nav-links a:focus {
+        outline-color: var(--primary);
+        background: rgba(37, 99, 235, 0.05);
     }
 
     .nav-link-active {

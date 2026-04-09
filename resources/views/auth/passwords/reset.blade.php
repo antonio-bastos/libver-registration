@@ -1,6 +1,7 @@
 @extends('layouts.auth')
 
 @section('title', 'Reset Password - Public Library of Veria')
+@section('meta-description', 'Reset your Public Library of Veria account password securely.')
 @section('width', '420px')
 
 @section('content')
@@ -46,7 +47,13 @@
                     class="@error('password') error @enderror"
                     autofocus
                 >
-                <i class="fas fa-eye password-toggle" id="togglePasswordBtn" onclick="togglePassword('password', 'togglePasswordBtn')"></i>
+                <i class="fas fa-eye password-toggle" 
+                   id="togglePasswordBtn" 
+                   role="button" 
+                   tabindex="0"
+                   aria-label="Show password"
+                   onclick="togglePassword('password', 'togglePasswordBtn')"
+                   onkeydown="if(event.key==='Enter'||event.key===' ') { togglePassword('password', 'togglePasswordBtn'); event.preventDefault(); }"></i>
             </div>
              @error('password')
                 <div class="field-error"><i class="fas fa-times-circle"></i> {{ $message }}</div>

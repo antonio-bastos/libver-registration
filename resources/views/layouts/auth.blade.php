@@ -3,9 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="@yield('meta-description', 'Public Library of Veria - Register for activities, manage registrations, and stay updated.')">
     <title>@yield('title', 'Public Library of Veria')</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" as="style">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -245,9 +247,10 @@
         }
 
         input:focus {
-            outline: none;
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
             background: rgba(37, 99, 235, 0.02);
         }
 
@@ -345,7 +348,7 @@
         }
 
         button[type="submit"]:active {
-            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
         }
 
         button[type="submit"]:disabled {
@@ -500,14 +503,16 @@
                 input.type = 'text';
                 icon.classList.remove('fa-eye');
                 icon.classList.add('fa-eye-slash');
+                icon.setAttribute('aria-label', 'Hide password');
             } else {
                 input.type = 'password';
                 icon.classList.remove('fa-eye-slash');
                 icon.classList.add('fa-eye');
+                icon.setAttribute('aria-label', 'Show password');
             }
         }
     </script>
-    <script src="https://cdn.userway.org/widget.js" data-account="P05mbmczA2" data-position="3"></script>
+    <script src="https://cdn.userway.org/widget.js" data-account="P05mbmczA2" data-position="3" defer></script>
     @stack('scripts')
 </body>
 </html>

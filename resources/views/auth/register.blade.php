@@ -1,6 +1,7 @@
 @extends('layouts.auth')
 
 @section('title', 'Register - Public Library of Veria')
+@section('meta-description', 'Create a new account at Public Library of Veria to register for activities and manage family members.')
 @section('width', '600px')
 
 @push('styles')
@@ -220,7 +221,11 @@
                     >
                     <i class="fas fa-eye password-toggle" 
                        id="toggleRegPassword" 
-                       onclick="togglePassword('password', 'toggleRegPassword')">
+                       role="button" 
+                       tabindex="0"
+                       aria-label="Show password"
+                       onclick="togglePassword('password', 'toggleRegPassword')"
+                       onkeydown="if(event.key==='Enter'||event.key===' ') { togglePassword('password', 'toggleRegPassword'); event.preventDefault(); }">
                     </i>
                 </div>
                 

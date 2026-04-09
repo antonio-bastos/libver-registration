@@ -3,9 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="@yield('meta-description', 'Public Library of Veria Admin Dashboard - Manage activities, registrations, and users.')">
     <title>Admin - @yield('title', 'Dashboard')</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" as="style">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -243,6 +245,6 @@
 
         @yield('content')
     </main>
-    <script src="https://cdn.userway.org/widget.js" data-account="P05mbmczA2" data-position="3"></script>
+    <script src="https://cdn.userway.org/widget.js" data-account="P05mbmczA2" data-position="3" defer></script>
 </body>
 </html>

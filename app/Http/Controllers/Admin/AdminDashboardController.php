@@ -438,16 +438,57 @@ class AdminDashboardController extends Controller
         return view('admin.activities.archived', compact('archivedActivities'));
     }
 
-    public function backupNow(BackupService $backupService)
+    public function backupNow(BackupService $backupService, Request $request)
     {
+        // Explicit authorization check (defense-in-depth)
+        if ($request->user()->role !== 'admin') {
+            abort(403, 'Only administrators can create backups.');
+        }
+
+        // Log backup action for audit trail
+        \Illuminate\Support\Facades\Log::info('Admin backup initiated', [
+            'admin_id' => $request->user()->id,
+            'admin_email' => $request->user()->email,
+            'timestamp' => now(),
+        ]);
+
         $file = $backupService->createBackup();
+
+        \Illuminate\Support\Facades\Log::info('Admin backup completed', [
+            'admin_id' => $request->user()->id,
+            'backup_file' => $file,
+        ]);
 
         return back()->with('success', 'Backup created successfully: ' . $file);
     }
 
-    public function restoreLatestBackup(BackupService $backupService)
+    public function restoreLatestBackup(BackupService $backupService, Request $request)
     {
+        // Explicit authorization check (defense-in-depth)
+        if ($request->user()->role !== 'admin') {
+            abort(403, 'Only administrators can restore backups.');
+        }
+
+        // Require confirmation token to prevent accidents
+        if (!$request->has('confirmed_restore') || $request->input('confirmed_restore') !== 'yes') {
+            return back()->withErrors(['confirmed_restore' => 'Restore action must be explicitly confirmed.']);
+        }
+
+        // Log restore action for audit trail
+        \Illuminate\Support\Facades\Log::warning('Admin restore initiated', [
+            'admin_id' => $request->user()->id,
+            'admin_email' => $request->user()->email,
+            'ip' => $request->ip(),
+            'timestamp' => now(),
+        ]);
+
         $result = $backupService->restoreLatest();
+
+        \Illuminate\Support\Facades\Log::warning('Admin restore completed', [
+            'admin_id' => $request->user()->id,
+            'backup_file' => $result['file'],
+            'tables_restored' => $result['restored_tables'],
+        ]);
 
         return back()->with('success', sprintf(
             'Restore complete from %s. Tables: %d, rows: %d.',

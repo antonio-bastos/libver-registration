@@ -1,6 +1,7 @@
 @extends('layouts.auth')
 
 @section('title', 'Login - Public Library of Veria')
+@section('meta-description', 'Sign in to your Public Library of Veria account to manage registrations and activities.')
 @section('width', '420px')
 
 @push('styles')
@@ -47,7 +48,13 @@
                     placeholder="Enter your password"
                     class="@error('password') error @enderror"
                 >
-                <i class="fas fa-eye password-toggle" id="togglePasswordBtn" onclick="togglePassword('password', 'togglePasswordBtn')"></i>
+                <i class="fas fa-eye password-toggle" 
+                   id="togglePasswordBtn" 
+                   role="button" 
+                   tabindex="0"
+                   aria-label="Show password"
+                   onclick="togglePassword('password', 'togglePasswordBtn')"
+                   onkeydown="if(event.key==='Enter'||event.key===' ') { togglePassword('password', 'togglePasswordBtn'); event.preventDefault(); }"></i>
             </div>
              @error('password')
                 <div class="field-error"><i class="fas fa-times-circle"></i> {{ $message }}</div>

@@ -1,2 +1,16 @@
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /login
+Disallow: /register
+Disallow: /password/reset
+Disallow: /api/
+Disallow: /storage/
+Disallow: /vendor/
+
+Crawl-delay: 1
+Request-rate: 1/1s
+
+# Sitemap (uncomment when sitemap is generated)
+# Sitemap: https://events.libver.gr/sitemap.xml

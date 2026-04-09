@@ -12,8 +12,15 @@ class RoleMiddleware
     {
         $user = $request->user();
 
-        if (!$user || ($roles && !in_array($user->role, $roles, true) && $user->role !== 'admin')) {
-            abort(403, 'Unauthorized.');
+        // No user = deny
+        if (!$user) {
+            abort(403, 'Unauthorized: Must be authenticated.');
+        }
+
+        // If roles are specified, user must have ONE of those roles (not just be admin)
+        // Admin role is NOT automatically granted for all endpoints
+        if (!empty($roles) && !in_array($user->role, $roles, true)) {
+            abort(403, 'Unauthorized: Insufficient permissions.');
         }
 
         return $next($request);
